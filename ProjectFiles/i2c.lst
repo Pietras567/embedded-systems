@@ -1,0 +1,3659 @@
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 1
+
+
+   1              		.code	16
+   2              		.file	"i2c.c"
+   3              		.section	.debug_abbrev,"",%progbits
+   4              	.Ldebug_abbrev0:
+   5              		.section	.debug_info,"",%progbits
+   6              	.Ldebug_info0:
+   7              		.section	.debug_line,"",%progbits
+   8              	.Ldebug_line0:
+   9 0000 0A010000 		.text
+   9      02002900 
+   9      00000201 
+   9      FB0E0D00 
+   9      01010101 
+  10              	.Ltext0:
+  11              		.align	2
+  12              		.global	i2cCheckStatus
+  13              		.code 16
+  14              		.thumb_func
+  15              		.type	i2cCheckStatus, %function
+  16              	i2cCheckStatus:
+  17              	.LFB2:
+  18              		.file 1 "i2c.c"
+   1:i2c.c         **** 
+   2:i2c.c         **** 
+   3:i2c.c         **** 
+   4:i2c.c         **** 
+   5:i2c.c         **** /******************************************************************************
+   6:i2c.c         ****  * Includes
+   7:i2c.c         ****  *****************************************************************************/
+   8:i2c.c         **** 
+   9:i2c.c         **** #include "general.h"
+  10:i2c.c         **** #include "i2c.h"
+  11:i2c.c         **** #include <lpc2xxx.h>
+  12:i2c.c         **** 
+  13:i2c.c         **** /******************************************************************************
+  14:i2c.c         ****  * Defines and typedefs
+  15:i2c.c         ****  *****************************************************************************/
+  16:i2c.c         **** 
+  17:i2c.c         **** #define I2C_CONSET (*((volatile unsigned char *) 0xE001C000))
+  18:i2c.c         **** #define I2C_STAT   (*((volatile unsigned char *) 0xE001C004))
+  19:i2c.c         **** #define I2C_DATA   (*((volatile unsigned char *) 0xE001C008))
+  20:i2c.c         **** #define I2C_ADDR   (*((volatile unsigned char *) 0xE001C00C))
+  21:i2c.c         **** #define I2C_SCLH   (*((volatile unsigned short*) 0xE001C010))
+  22:i2c.c         **** #define I2C_SCLL   (*((volatile unsigned short*) 0xE001C014))
+  23:i2c.c         **** #define I2C_CONCLR (*((volatile unsigned char *) 0xE001C018))
+  24:i2c.c         **** 
+  25:i2c.c         **** 
+  26:i2c.c         **** #define I2C_REG_CONSET      0x00000040 /* Control Set Register         */
+  27:i2c.c         **** #define I2C_REG_CONSET_MASK 0x0000007C /* Used bits                    */
+  28:i2c.c         **** #define I2C_REG_DATA        0x00000000 /* Data register                */
+  29:i2c.c         **** #define I2C_REG_DATA_MASK   0x000000FF /* Used bits                    */
+  30:i2c.c         **** #define I2C_REG_ADDR        0x00000000 /* Slave address register       */
+  31:i2c.c         **** #define I2C_REG_ADDR_MASK   0x000000FF /* Used bits                    */
+  32:i2c.c         **** #define I2C_REG_SCLH        0x00000100 /* SCL Duty Cycle high register */
+  33:i2c.c         **** #define I2C_REG_SCLH_MASK   0x0000FFFF /* Used bits                    */
+  34:i2c.c         **** #define I2C_REG_SCLL        0x00000100 /* SCL Duty Cycle low register  */
+  35:i2c.c         **** #define I2C_REG_SCLL_MASK   0x0000FFFF /* Used bits                    */
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 2
+
+
+  36:i2c.c         **** 
+  37:i2c.c         **** /******************************************************************************
+  38:i2c.c         ****  *
+  39:i2c.c         ****  * Description:
+  40:i2c.c         ****  *    Checks the I2C status.
+  41:i2c.c         ****  *
+  42:i2c.c         ****  *
+  43:i2c.c         ****  *  Returns:
+  44:i2c.c         ****  *      00h Bus error
+  45:i2c.c         ****  *      08h START condition transmitted
+  46:i2c.c         ****  *      10h Repeated START condition transmitted
+  47:i2c.c         ****  *      18h SLA + W transmitted, ACK received
+  48:i2c.c         ****  *      20h SLA + W transmitted, ACK not received
+  49:i2c.c         ****  *      28h Data byte transmitted, ACK received
+  50:i2c.c         ****  *      30h Data byte transmitted, ACK not received
+  51:i2c.c         ****  *      38h Arbitration lost
+  52:i2c.c         ****  *      40h SLA + R transmitted, ACK received
+  53:i2c.c         ****  *      48h SLA + R transmitted, ACK not received
+  54:i2c.c         ****  *      50h Data byte received in master mode, ACK transmitted
+  55:i2c.c         ****  *      58h Data byte received in master mode, ACK not transmitted
+  56:i2c.c         ****  *      60h SLA + W received, ACK transmitted
+  57:i2c.c         ****  *      68h Arbitration lost, SLA + W received, ACK transmitted
+  58:i2c.c         ****  *      70h General call address received, ACK transmitted
+  59:i2c.c         ****  *      78h Arbitration lost, general call addr received, ACK transmitted
+  60:i2c.c         ****  *      80h Data byte received with own SLA, ACK transmitted
+  61:i2c.c         ****  *      88h Data byte received with own SLA, ACK not transmitted
+  62:i2c.c         ****  *      90h Data byte received after general call, ACK transmitted
+  63:i2c.c         ****  *      98h Data byte received after general call, ACK not transmitted
+  64:i2c.c         ****  *      A0h STOP or repeated START condition received in slave mode
+  65:i2c.c         ****  *      A8h SLA + R received, ACK transmitted
+  66:i2c.c         ****  *      B0h Arbitration lost, SLA + R received, ACK transmitted
+  67:i2c.c         ****  *      B8h Data byte transmitted in slave mode, ACK received
+  68:i2c.c         ****  *      C0h Data byte transmitted in slave mode, ACK not received
+  69:i2c.c         ****  *      C8h Last byte transmitted in slave mode, ACK received
+  70:i2c.c         ****  *      F8h No relevant status information, SI=0
+  71:i2c.c         ****  *      FFh Channel error
+  72:i2c.c         ****  *
+  73:i2c.c         ****  *****************************************************************************/
+  74:i2c.c         **** tU8
+  75:i2c.c         **** i2cCheckStatus(void)
+  76:i2c.c         **** {
+  19              		.loc 1 76 0
+  20 0000 80B5     		push	{r7, lr}
+  21              	.LCFI0:
+  22 0002 81B0     		sub	sp, sp, #4
+  23              	.LCFI1:
+  24 0004 00AF     		add	r7, sp, #0
+  25              	.LCFI2:
+  77:i2c.c         ****   tU8 status = 0;
+  26              		.loc 1 77 0
+  27 0006 FB1C     		add	r3, r7, #3
+  28 0008 0022     		mov	r2, #0
+  29 000a 1A70     		strb	r2, [r3]
+  30              	.L2:
+  78:i2c.c         **** 
+  79:i2c.c         ****   /* wait for I2C Status changed */
+  80:i2c.c         ****   while( (I2C_CONSET & 0x08)  == 0)   /* while SI == 0 */
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 3
+
+
+  31              		.loc 1 80 0
+  32 000c 0A4B     		ldr	r3, .L5
+  33 000e 1B78     		ldrb	r3, [r3]
+  34 0010 1B06     		lsl	r3, r3, #24
+  35 0012 1B0E     		lsr	r3, r3, #24
+  36 0014 1A1C     		mov	r2, r3
+  37 0016 0823     		mov	r3, #8
+  38 0018 1340     		and	r3, r3, r2
+  39 001a 002B     		cmp	r3, #0
+  40 001c F6D0     		beq	.L2
+  81:i2c.c         ****   {
+  82:i2c.c         ****     ;
+  83:i2c.c         ****   }
+  84:i2c.c         **** 
+  85:i2c.c         ****   /* Read I2C State */
+  86:i2c.c         ****   status = I2C_STAT;
+  41              		.loc 1 86 0
+  42 001e 074B     		ldr	r3, .L5+4
+  43 0020 FA1C     		add	r2, r7, #3
+  44 0022 1B78     		ldrb	r3, [r3]
+  45 0024 1370     		strb	r3, [r2]
+  87:i2c.c         **** 
+  88:i2c.c         ****   /* NOTE! SI flag is not cleared here */
+  89:i2c.c         **** 
+  90:i2c.c         ****   return status;
+  46              		.loc 1 90 0
+  47 0026 FB1C     		add	r3, r7, #3
+  48 0028 1B78     		ldrb	r3, [r3]
+  91:i2c.c         **** }
+  49              		.loc 1 91 0
+  50 002a 181C     		mov	r0, r3
+  51 002c BD46     		mov	sp, r7
+  52 002e 01B0     		add	sp, sp, #4
+  53              		@ sp needed for prologue
+  54 0030 80BC     		pop	{r7}
+  55 0032 02BC     		pop	{r1}
+  56 0034 0847     		bx	r1
+  57              	.L6:
+  58 0036 0000     		.align	2
+  59              	.L5:
+  60 0038 00C001E0 		.word	-536756224
+  61 003c 04C001E0 		.word	-536756220
+  62              	.LFE2:
+  63              		.size	i2cCheckStatus, .-i2cCheckStatus
+  64              		.align	2
+  65              		.global	i2cInit
+  66              		.code 16
+  67              		.thumb_func
+  68              		.type	i2cInit, %function
+  69              	i2cInit:
+  70              	.LFB3:
+  92:i2c.c         **** 
+  93:i2c.c         **** /******************************************************************************
+  94:i2c.c         ****  *
+  95:i2c.c         ****  * Description:
+  96:i2c.c         ****  *    Reset the I2C module.
+  97:i2c.c         ****  *
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 4
+
+
+  98:i2c.c         ****  *****************************************************************************/
+  99:i2c.c         **** void
+ 100:i2c.c         **** i2cInit(void)
+ 101:i2c.c         **** {
+  71              		.loc 1 101 0
+  72 0040 80B5     		push	{r7, lr}
+  73              	.LCFI3:
+  74 0042 02AF     		add	r7, sp, #8
+  75              	.LCFI4:
+ 102:i2c.c         ****   PINSEL0  |= 0x50;
+  76              		.loc 1 102 0
+  77 0044 2549     		ldr	r1, .L9
+  78 0046 254B     		ldr	r3, .L9
+  79 0048 1A68     		ldr	r2, [r3]
+  80 004a 5023     		mov	r3, #80
+  81 004c 1343     		orr	r3, r3, r2
+  82 004e 0B60     		str	r3, [r1]
+ 103:i2c.c         **** 
+ 104:i2c.c         ****   /* clear flags */
+ 105:i2c.c         ****   I2C_CONCLR = 0x6c;    
+  83              		.loc 1 105 0
+  84 0050 234A     		ldr	r2, .L9+4
+  85 0052 6C23     		mov	r3, #108
+  86 0054 1370     		strb	r3, [r2]
+ 106:i2c.c         **** 
+ 107:i2c.c         ****   /* reset registers */
+ 108:i2c.c         ****   I2C_SCLL   = ( I2C_SCLL   & ~I2C_REG_SCLL_MASK )   | I2C_REG_SCLL;
+  87              		.loc 1 108 0
+  88 0056 2349     		ldr	r1, .L9+8
+  89 0058 224B     		ldr	r3, .L9+8
+  90 005a 1B88     		ldrh	r3, [r3]
+  91 005c 1B04     		lsl	r3, r3, #16
+  92 005e 1B0C     		lsr	r3, r3, #16
+  93 0060 1B04     		lsl	r3, r3, #16
+  94 0062 1B0C     		lsr	r3, r3, #16
+  95 0064 0022     		mov	r2, #0
+  96 0066 1340     		and	r3, r3, r2
+  97 0068 1A1C     		add	r2, r3, #0
+  98 006a 8023     		mov	r3, #128
+  99 006c 5B00     		lsl	r3, r3, #1
+ 100 006e 1343     		orr	r3, r3, r2
+ 101 0070 1B04     		lsl	r3, r3, #16
+ 102 0072 1B0C     		lsr	r3, r3, #16
+ 103 0074 1B04     		lsl	r3, r3, #16
+ 104 0076 1B0C     		lsr	r3, r3, #16
+ 105 0078 0B80     		strh	r3, [r1]
+ 109:i2c.c         ****   I2C_SCLH   = ( I2C_SCLH   & ~I2C_REG_SCLH_MASK )   | I2C_REG_SCLH;
+ 106              		.loc 1 109 0
+ 107 007a 1B49     		ldr	r1, .L9+12
+ 108 007c 1A4B     		ldr	r3, .L9+12
+ 109 007e 1B88     		ldrh	r3, [r3]
+ 110 0080 1B04     		lsl	r3, r3, #16
+ 111 0082 1B0C     		lsr	r3, r3, #16
+ 112 0084 1B04     		lsl	r3, r3, #16
+ 113 0086 1B0C     		lsr	r3, r3, #16
+ 114 0088 0022     		mov	r2, #0
+ 115 008a 1340     		and	r3, r3, r2
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 5
+
+
+ 116 008c 1A1C     		add	r2, r3, #0
+ 117 008e 8023     		mov	r3, #128
+ 118 0090 5B00     		lsl	r3, r3, #1
+ 119 0092 1343     		orr	r3, r3, r2
+ 120 0094 1B04     		lsl	r3, r3, #16
+ 121 0096 1B0C     		lsr	r3, r3, #16
+ 122 0098 1B04     		lsl	r3, r3, #16
+ 123 009a 1B0C     		lsr	r3, r3, #16
+ 124 009c 0B80     		strh	r3, [r1]
+ 110:i2c.c         ****   I2C_ADDR   = ( I2C_ADDR   & ~I2C_REG_ADDR_MASK )   | I2C_REG_ADDR;
+ 125              		.loc 1 110 0
+ 126 009e 1349     		ldr	r1, .L9+16
+ 127 00a0 124B     		ldr	r3, .L9+16
+ 128 00a2 1B78     		ldrb	r3, [r3]
+ 129 00a4 1B06     		lsl	r3, r3, #24
+ 130 00a6 1B0E     		lsr	r3, r3, #24
+ 131 00a8 0022     		mov	r2, #0
+ 132 00aa 1340     		and	r3, r3, r2
+ 133 00ac 0B70     		strb	r3, [r1]
+ 111:i2c.c         ****   I2C_CONSET = ( I2C_CONSET & ~I2C_REG_CONSET_MASK ) | I2C_REG_CONSET;
+ 134              		.loc 1 111 0
+ 135 00ae 1049     		ldr	r1, .L9+20
+ 136 00b0 0F4B     		ldr	r3, .L9+20
+ 137 00b2 1B78     		ldrb	r3, [r3]
+ 138 00b4 1B06     		lsl	r3, r3, #24
+ 139 00b6 1B0E     		lsr	r3, r3, #24
+ 140 00b8 1B06     		lsl	r3, r3, #24
+ 141 00ba 1B0E     		lsr	r3, r3, #24
+ 142 00bc 8322     		mov	r2, #131
+ 143 00be 1340     		and	r3, r3, r2
+ 144 00c0 1A1C     		add	r2, r3, #0
+ 145 00c2 4023     		mov	r3, #64
+ 146 00c4 1343     		orr	r3, r3, r2
+ 147 00c6 1B06     		lsl	r3, r3, #24
+ 148 00c8 1B0E     		lsr	r3, r3, #24
+ 149 00ca 1B06     		lsl	r3, r3, #24
+ 150 00cc 1B0E     		lsr	r3, r3, #24
+ 151 00ce 0B70     		strb	r3, [r1]
+ 112:i2c.c         **** }
+ 152              		.loc 1 112 0
+ 153 00d0 BD46     		mov	sp, r7
+ 154 00d2 82B0     		sub	sp, sp, #8
+ 155              		@ sp needed for prologue
+ 156 00d4 80BC     		pop	{r7}
+ 157 00d6 01BC     		pop	{r0}
+ 158 00d8 0047     		bx	r0
+ 159              	.L10:
+ 160 00da 0000     		.align	2
+ 161              	.L9:
+ 162 00dc 00C002E0 		.word	-536690688
+ 163 00e0 18C001E0 		.word	-536756200
+ 164 00e4 14C001E0 		.word	-536756204
+ 165 00e8 10C001E0 		.word	-536756208
+ 166 00ec 0CC001E0 		.word	-536756212
+ 167 00f0 00C001E0 		.word	-536756224
+ 168              	.LFE3:
+ 169              		.size	i2cInit, .-i2cInit
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 6
+
+
+ 170              		.align	2
+ 171              		.global	i2cStart
+ 172              		.code 16
+ 173              		.thumb_func
+ 174              		.type	i2cStart, %function
+ 175              	i2cStart:
+ 176              	.LFB4:
+ 113:i2c.c         **** 
+ 114:i2c.c         **** /******************************************************************************
+ 115:i2c.c         ****  *
+ 116:i2c.c         ****  * Description:
+ 117:i2c.c         ****  *    Generates a start condition on I2C when bus is free.
+ 118:i2c.c         ****  *    Master mode will also automatically be entered.
+ 119:i2c.c         ****  *
+ 120:i2c.c         ****  *    Note: After a stop condition, you may need a bus free time before you 
+ 121:i2c.c         ****  *          can generate a new start condition.
+ 122:i2c.c         ****  *
+ 123:i2c.c         ****  * Returns:
+ 124:i2c.c         ****  *    I2C_CODE_OK or I2C status code
+ 125:i2c.c         ****  *
+ 126:i2c.c         ****  *****************************************************************************/
+ 127:i2c.c         **** tS8
+ 128:i2c.c         **** i2cStart(void)
+ 129:i2c.c         **** {
+ 177              		.loc 1 129 0
+ 178 00f4 80B5     		push	{r7, lr}
+ 179              	.LCFI5:
+ 180 00f6 81B0     		sub	sp, sp, #4
+ 181              	.LCFI6:
+ 182 00f8 00AF     		add	r7, sp, #0
+ 183              	.LCFI7:
+ 130:i2c.c         ****   tU8   status  = 0;
+ 184              		.loc 1 130 0
+ 185 00fa BA1C     		add	r2, r7, #2
+ 186 00fc 0023     		mov	r3, #0
+ 187 00fe 1370     		strb	r3, [r2]
+ 131:i2c.c         ****   tS8   retCode = 0;
+ 188              		.loc 1 131 0
+ 189 0100 FA1C     		add	r2, r7, #3
+ 190 0102 0023     		mov	r3, #0
+ 191 0104 1370     		strb	r3, [r2]
+ 132:i2c.c         **** 
+ 133:i2c.c         ****   /* issue a start condition */
+ 134:i2c.c         ****   I2C_CONSET |= 0x20; /* STA = 1, set start flag */
+ 192              		.loc 1 134 0
+ 193 0106 1A49     		ldr	r1, .L20
+ 194 0108 194B     		ldr	r3, .L20
+ 195 010a 1B78     		ldrb	r3, [r3]
+ 196 010c 1B06     		lsl	r3, r3, #24
+ 197 010e 1A0E     		lsr	r2, r3, #24
+ 198 0110 2023     		mov	r3, #32
+ 199 0112 1343     		orr	r3, r3, r2
+ 200 0114 1B06     		lsl	r3, r3, #24
+ 201 0116 1B0E     		lsr	r3, r3, #24
+ 202 0118 0B70     		strb	r3, [r1]
+ 203              	.L12:
+ 135:i2c.c         **** 
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 7
+
+
+ 136:i2c.c         ****   /* wait until START transmitted */
+ 137:i2c.c         ****   while(1)
+ 138:i2c.c         ****   {
+ 139:i2c.c         ****     status = i2cCheckStatus();
+ 204              		.loc 1 139 0
+ 205 011a FFF7FEFF 		bl	i2cCheckStatus
+ 206 011e 031C     		mov	r3, r0
+ 207 0120 BA1C     		add	r2, r7, #2
+ 208 0122 1370     		strb	r3, [r2]
+ 140:i2c.c         **** 
+ 141:i2c.c         ****     /* start transmitted */
+ 142:i2c.c         ****     if((status == 0x08) || (status == 0x10))
+ 209              		.loc 1 142 0
+ 210 0124 BB1C     		add	r3, r7, #2
+ 211 0126 1B78     		ldrb	r3, [r3]
+ 212 0128 082B     		cmp	r3, #8
+ 213 012a 03D0     		beq	.L13
+ 214 012c BB1C     		add	r3, r7, #2
+ 215 012e 1B78     		ldrb	r3, [r3]
+ 216 0130 102B     		cmp	r3, #16
+ 217 0132 03D1     		bne	.L15
+ 218              	.L13:
+ 143:i2c.c         ****     {
+ 144:i2c.c         ****       retCode = I2C_CODE_OK;
+ 219              		.loc 1 144 0
+ 220 0134 FB1C     		add	r3, r7, #3
+ 221 0136 0122     		mov	r2, #1
+ 222 0138 1A70     		strb	r2, [r3]
+ 145:i2c.c         ****       break;
+ 223              		.loc 1 145 0
+ 224 013a 0CE0     		b	.L16
+ 225              	.L15:
+ 146:i2c.c         ****     }
+ 147:i2c.c         **** 
+ 148:i2c.c         ****     /* error */
+ 149:i2c.c         ****     else if(status != 0xf8)
+ 226              		.loc 1 149 0
+ 227 013c BB1C     		add	r3, r7, #2
+ 228 013e 1B78     		ldrb	r3, [r3]
+ 229 0140 F82B     		cmp	r3, #248
+ 230 0142 04D0     		beq	.L17
+ 150:i2c.c         ****     {
+ 151:i2c.c         ****       retCode = (tS8) status;
+ 231              		.loc 1 151 0
+ 232 0144 FB1C     		add	r3, r7, #3
+ 233 0146 BA1C     		add	r2, r7, #2
+ 234 0148 1278     		ldrb	r2, [r2]
+ 235 014a 1A70     		strb	r2, [r3]
+ 152:i2c.c         ****       break;
+ 236              		.loc 1 152 0
+ 237 014c 03E0     		b	.L16
+ 238              	.L17:
+ 153:i2c.c         ****     }
+ 154:i2c.c         **** 
+ 155:i2c.c         ****     else
+ 156:i2c.c         ****     {
+ 157:i2c.c         ****       /* clear SI flag */
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 8
+
+
+ 158:i2c.c         ****       I2C_CONCLR = 0x08;
+ 239              		.loc 1 158 0
+ 240 014e 094B     		ldr	r3, .L20+4
+ 241 0150 0822     		mov	r2, #8
+ 242 0152 1A70     		strb	r2, [r3]
+ 159:i2c.c         ****     }    
+ 160:i2c.c         ****   }
+ 243              		.loc 1 160 0
+ 244 0154 E1E7     		b	.L12
+ 245              	.L16:
+ 161:i2c.c         **** 
+ 162:i2c.c         ****   /* clear start flag */
+ 163:i2c.c         ****   I2C_CONCLR = 0x20;
+ 246              		.loc 1 163 0
+ 247 0156 074A     		ldr	r2, .L20+4
+ 248 0158 2023     		mov	r3, #32
+ 249 015a 1370     		strb	r3, [r2]
+ 164:i2c.c         **** 
+ 165:i2c.c         ****   return retCode;
+ 250              		.loc 1 165 0
+ 251 015c FB1C     		add	r3, r7, #3
+ 252 015e 1B78     		ldrb	r3, [r3, #0]
+ 253 0160 1B06     		lsl	r3, r3, #24
+ 254 0162 1B16     		asr	r3, r3, #24
+ 166:i2c.c         **** }
+ 255              		.loc 1 166 0
+ 256 0164 181C     		mov	r0, r3
+ 257 0166 BD46     		mov	sp, r7
+ 258 0168 01B0     		add	sp, sp, #4
+ 259              		@ sp needed for prologue
+ 260 016a 80BC     		pop	{r7}
+ 261 016c 02BC     		pop	{r1}
+ 262 016e 0847     		bx	r1
+ 263              	.L21:
+ 264              		.align	2
+ 265              	.L20:
+ 266 0170 00C001E0 		.word	-536756224
+ 267 0174 18C001E0 		.word	-536756200
+ 268              	.LFE4:
+ 269              		.size	i2cStart, .-i2cStart
+ 270              		.align	2
+ 271              		.global	i2cRepeatStart
+ 272              		.code 16
+ 273              		.thumb_func
+ 274              		.type	i2cRepeatStart, %function
+ 275              	i2cRepeatStart:
+ 276              	.LFB5:
+ 167:i2c.c         **** 
+ 168:i2c.c         **** /******************************************************************************
+ 169:i2c.c         ****  *
+ 170:i2c.c         ****  * Description:
+ 171:i2c.c         ****  *    Generates a start condition on I2C when bus is free.
+ 172:i2c.c         ****  *    Master mode will also automatically be entered.
+ 173:i2c.c         ****  *
+ 174:i2c.c         ****  *    Note: After a stop condition, you may need a bus free time before you 
+ 175:i2c.c         ****  *          can generate a new start condition.
+ 176:i2c.c         ****  *
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 9
+
+
+ 177:i2c.c         ****  * Returns:
+ 178:i2c.c         ****  *    I2C_CODE_OK or I2C status code
+ 179:i2c.c         ****  *
+ 180:i2c.c         ****  *****************************************************************************/
+ 181:i2c.c         **** tS8
+ 182:i2c.c         **** i2cRepeatStart(void)
+ 183:i2c.c         **** {
+ 277              		.loc 1 183 0
+ 278 0178 80B5     		push	{r7, lr}
+ 279              	.LCFI8:
+ 280 017a 81B0     		sub	sp, sp, #4
+ 281              	.LCFI9:
+ 282 017c 00AF     		add	r7, sp, #0
+ 283              	.LCFI10:
+ 184:i2c.c         ****   tU8   status  = 0;
+ 284              		.loc 1 184 0
+ 285 017e BA1C     		add	r2, r7, #2
+ 286 0180 0023     		mov	r3, #0
+ 287 0182 1370     		strb	r3, [r2]
+ 185:i2c.c         ****   tS8   retCode = 0;
+ 288              		.loc 1 185 0
+ 289 0184 FA1C     		add	r2, r7, #3
+ 290 0186 0023     		mov	r3, #0
+ 291 0188 1370     		strb	r3, [r2]
+ 186:i2c.c         **** 
+ 187:i2c.c         ****   /* issue a start condition */
+ 188:i2c.c         ****   I2C_CONSET |= 0x20; /* STA = 1, set start flag */
+ 292              		.loc 1 188 0
+ 293 018a 1C49     		ldr	r1, .L31
+ 294 018c 1B4B     		ldr	r3, .L31
+ 295 018e 1B78     		ldrb	r3, [r3]
+ 296 0190 1B06     		lsl	r3, r3, #24
+ 297 0192 1A0E     		lsr	r2, r3, #24
+ 298 0194 2023     		mov	r3, #32
+ 299 0196 1343     		orr	r3, r3, r2
+ 300 0198 1B06     		lsl	r3, r3, #24
+ 301 019a 1B0E     		lsr	r3, r3, #24
+ 302 019c 0B70     		strb	r3, [r1]
+ 189:i2c.c         ****   I2C_CONCLR = 0x08;  /* clear SI flag           */
+ 303              		.loc 1 189 0
+ 304 019e 184A     		ldr	r2, .L31+4
+ 305 01a0 0823     		mov	r3, #8
+ 306 01a2 1370     		strb	r3, [r2]
+ 307              	.L23:
+ 190:i2c.c         **** 
+ 191:i2c.c         ****   /* wait until START transmitted */
+ 192:i2c.c         ****   while(1)
+ 193:i2c.c         ****   {
+ 194:i2c.c         ****     status = i2cCheckStatus();
+ 308              		.loc 1 194 0
+ 309 01a4 FFF7FEFF 		bl	i2cCheckStatus
+ 310 01a8 031C     		mov	r3, r0
+ 311 01aa BA1C     		add	r2, r7, #2
+ 312 01ac 1370     		strb	r3, [r2]
+ 195:i2c.c         **** 
+ 196:i2c.c         ****     /* start transmitted */
+ 197:i2c.c         ****     if((status == 0x08) || (status == 0x10))
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 10
+
+
+ 313              		.loc 1 197 0
+ 314 01ae BB1C     		add	r3, r7, #2
+ 315 01b0 1B78     		ldrb	r3, [r3]
+ 316 01b2 082B     		cmp	r3, #8
+ 317 01b4 03D0     		beq	.L24
+ 318 01b6 BB1C     		add	r3, r7, #2
+ 319 01b8 1B78     		ldrb	r3, [r3]
+ 320 01ba 102B     		cmp	r3, #16
+ 321 01bc 03D1     		bne	.L26
+ 322              	.L24:
+ 198:i2c.c         ****     {
+ 199:i2c.c         ****       retCode = I2C_CODE_OK;
+ 323              		.loc 1 199 0
+ 324 01be FB1C     		add	r3, r7, #3
+ 325 01c0 0122     		mov	r2, #1
+ 326 01c2 1A70     		strb	r2, [r3]
+ 200:i2c.c         ****       break;
+ 327              		.loc 1 200 0
+ 328 01c4 0CE0     		b	.L27
+ 329              	.L26:
+ 201:i2c.c         ****     }
+ 202:i2c.c         **** 
+ 203:i2c.c         ****     /* error */
+ 204:i2c.c         ****     else if(status != 0xf8)
+ 330              		.loc 1 204 0
+ 331 01c6 BB1C     		add	r3, r7, #2
+ 332 01c8 1B78     		ldrb	r3, [r3]
+ 333 01ca F82B     		cmp	r3, #248
+ 334 01cc 04D0     		beq	.L28
+ 205:i2c.c         ****     {
+ 206:i2c.c         ****       retCode = (tS8) status;
+ 335              		.loc 1 206 0
+ 336 01ce FB1C     		add	r3, r7, #3
+ 337 01d0 BA1C     		add	r2, r7, #2
+ 338 01d2 1278     		ldrb	r2, [r2]
+ 339 01d4 1A70     		strb	r2, [r3]
+ 207:i2c.c         ****       break;
+ 340              		.loc 1 207 0
+ 341 01d6 03E0     		b	.L27
+ 342              	.L28:
+ 208:i2c.c         ****     }
+ 209:i2c.c         **** 
+ 210:i2c.c         ****     else
+ 211:i2c.c         ****     {
+ 212:i2c.c         ****       /* clear SI flag */
+ 213:i2c.c         ****       I2C_CONCLR = 0x08;
+ 343              		.loc 1 213 0
+ 344 01d8 094B     		ldr	r3, .L31+4
+ 345 01da 0822     		mov	r2, #8
+ 346 01dc 1A70     		strb	r2, [r3]
+ 214:i2c.c         ****     }    
+ 215:i2c.c         ****   }
+ 347              		.loc 1 215 0
+ 348 01de E1E7     		b	.L23
+ 349              	.L27:
+ 216:i2c.c         **** 
+ 217:i2c.c         ****   /* clear start flag */
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 11
+
+
+ 218:i2c.c         ****   I2C_CONCLR = 0x20;
+ 350              		.loc 1 218 0
+ 351 01e0 074A     		ldr	r2, .L31+4
+ 352 01e2 2023     		mov	r3, #32
+ 353 01e4 1370     		strb	r3, [r2]
+ 219:i2c.c         **** 
+ 220:i2c.c         ****   return retCode;
+ 354              		.loc 1 220 0
+ 355 01e6 FB1C     		add	r3, r7, #3
+ 356 01e8 1B78     		ldrb	r3, [r3, #0]
+ 357 01ea 1B06     		lsl	r3, r3, #24
+ 358 01ec 1B16     		asr	r3, r3, #24
+ 221:i2c.c         **** }
+ 359              		.loc 1 221 0
+ 360 01ee 181C     		mov	r0, r3
+ 361 01f0 BD46     		mov	sp, r7
+ 362 01f2 01B0     		add	sp, sp, #4
+ 363              		@ sp needed for prologue
+ 364 01f4 80BC     		pop	{r7}
+ 365 01f6 02BC     		pop	{r1}
+ 366 01f8 0847     		bx	r1
+ 367              	.L32:
+ 368 01fa 0000     		.align	2
+ 369              	.L31:
+ 370 01fc 00C001E0 		.word	-536756224
+ 371 0200 18C001E0 		.word	-536756200
+ 372              	.LFE5:
+ 373              		.size	i2cRepeatStart, .-i2cRepeatStart
+ 374              		.align	2
+ 375              		.global	i2cStop
+ 376              		.code 16
+ 377              		.thumb_func
+ 378              		.type	i2cStop, %function
+ 379              	i2cStop:
+ 380              	.LFB6:
+ 222:i2c.c         **** 
+ 223:i2c.c         **** /******************************************************************************
+ 224:i2c.c         ****  *
+ 225:i2c.c         ****  * Description:
+ 226:i2c.c         ****  *    Generates a stop condition in master mode or recovers from an error
+ 227:i2c.c         ****  *    condition in slave mode.
+ 228:i2c.c         ****  *
+ 229:i2c.c         ****  *    Note: After this function is run, you may need a bus free time before
+ 230:i2c.c         ****  *          you can generate a new start condition.
+ 231:i2c.c         ****  *
+ 232:i2c.c         ****  * Returns:
+ 233:i2c.c         ****  *    I2C_CODE_OK
+ 234:i2c.c         ****  *
+ 235:i2c.c         ****  *****************************************************************************/
+ 236:i2c.c         **** tS8
+ 237:i2c.c         **** i2cStop(void)
+ 238:i2c.c         **** {
+ 381              		.loc 1 238 0
+ 382 0204 80B5     		push	{r7, lr}
+ 383              	.LCFI11:
+ 384 0206 02AF     		add	r7, sp, #8
+ 385              	.LCFI12:
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 12
+
+
+ 239:i2c.c         ****   I2C_CONSET |= 0x10; /* STO = 1, set stop flag */ 
+ 386              		.loc 1 239 0
+ 387 0208 0E49     		ldr	r1, .L37
+ 388 020a 0E4B     		ldr	r3, .L37
+ 389 020c 1B78     		ldrb	r3, [r3]
+ 390 020e 1B06     		lsl	r3, r3, #24
+ 391 0210 1A0E     		lsr	r2, r3, #24
+ 392 0212 1023     		mov	r3, #16
+ 393 0214 1343     		orr	r3, r3, r2
+ 394 0216 1B06     		lsl	r3, r3, #24
+ 395 0218 1B0E     		lsr	r3, r3, #24
+ 396 021a 0B70     		strb	r3, [r1]
+ 240:i2c.c         ****   I2C_CONCLR = 0x08;  /* clear SI flag          */ 
+ 397              		.loc 1 240 0
+ 398 021c 0A4A     		ldr	r2, .L37+4
+ 399 021e 0823     		mov	r3, #8
+ 400 0220 1370     		strb	r3, [r2]
+ 401              	.L34:
+ 241:i2c.c         **** 
+ 242:i2c.c         ****   /* wait for STOP detected (while STO = 1) */
+ 243:i2c.c         ****   while((I2C_CONSET & 0x10) == 0x10 )
+ 402              		.loc 1 243 0
+ 403 0222 084B     		ldr	r3, .L37
+ 404 0224 1B78     		ldrb	r3, [r3]
+ 405 0226 1B06     		lsl	r3, r3, #24
+ 406 0228 1B0E     		lsr	r3, r3, #24
+ 407 022a 1A1C     		mov	r2, r3
+ 408 022c 1023     		mov	r3, #16
+ 409 022e 1340     		and	r3, r3, r2
+ 410 0230 002B     		cmp	r3, #0
+ 411 0232 F6D1     		bne	.L34
+ 244:i2c.c         ****   {
+ 245:i2c.c         ****     /* do nothing */
+ 246:i2c.c         ****     ;
+ 247:i2c.c         ****   }
+ 248:i2c.c         **** 
+ 249:i2c.c         ****   return I2C_CODE_OK;
+ 412              		.loc 1 249 0
+ 413 0234 0123     		mov	r3, #1
+ 250:i2c.c         **** }
+ 414              		.loc 1 250 0
+ 415 0236 181C     		mov	r0, r3
+ 416 0238 BD46     		mov	sp, r7
+ 417 023a 82B0     		sub	sp, sp, #8
+ 418              		@ sp needed for prologue
+ 419 023c 80BC     		pop	{r7}
+ 420 023e 02BC     		pop	{r1}
+ 421 0240 0847     		bx	r1
+ 422              	.L38:
+ 423 0242 0000     		.align	2
+ 424              	.L37:
+ 425 0244 00C001E0 		.word	-536756224
+ 426 0248 18C001E0 		.word	-536756200
+ 427              	.LFE6:
+ 428              		.size	i2cStop, .-i2cStop
+ 429              		.align	2
+ 430              		.global	i2cPutChar
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 13
+
+
+ 431              		.code 16
+ 432              		.thumb_func
+ 433              		.type	i2cPutChar, %function
+ 434              	i2cPutChar:
+ 435              	.LFB7:
+ 251:i2c.c         **** 
+ 252:i2c.c         **** /******************************************************************************
+ 253:i2c.c         ****  *
+ 254:i2c.c         ****  * Description:
+ 255:i2c.c         ****  *    Sends a character on the I2C network
+ 256:i2c.c         ****  *
+ 257:i2c.c         ****  * Params:
+ 258:i2c.c         ****  *    [in] data - the character to send
+ 259:i2c.c         ****  *
+ 260:i2c.c         ****  * Returns:
+ 261:i2c.c         ****  *    I2C_CODE_OK   - successful
+ 262:i2c.c         ****  *    I2C_CODE_BUSY - data register is not ready -> byte was not sent
+ 263:i2c.c         ****  *
+ 264:i2c.c         ****  *****************************************************************************/
+ 265:i2c.c         **** tS8
+ 266:i2c.c         **** i2cPutChar(tU8 data)
+ 267:i2c.c         **** {
+ 436              		.loc 1 267 0
+ 437 024c 80B5     		push	{r7, lr}
+ 438              	.LCFI13:
+ 439 024e 82B0     		sub	sp, sp, #8
+ 440              	.LCFI14:
+ 441 0250 00AF     		add	r7, sp, #0
+ 442              	.LCFI15:
+ 443 0252 031C     		mov	r3, r0
+ 444 0254 3A1C     		mov	r2, r7
+ 445 0256 1370     		strb	r3, [r2]
+ 268:i2c.c         ****   tS8 retCode = 0;
+ 446              		.loc 1 268 0
+ 447 0258 FA1D     		add	r2, r7, #7
+ 448 025a 0023     		mov	r3, #0
+ 449 025c 1370     		strb	r3, [r2]
+ 269:i2c.c         **** 
+ 270:i2c.c         ****   /* check if I2C Data register can be accessed */
+ 271:i2c.c         ****   if((I2C_CONSET & 0x08) != 0)  /* if SI = 1 */
+ 450              		.loc 1 271 0
+ 451 025e 114B     		ldr	r3, .L44
+ 452 0260 1B78     		ldrb	r3, [r3]
+ 453 0262 1B06     		lsl	r3, r3, #24
+ 454 0264 1B0E     		lsr	r3, r3, #24
+ 455 0266 1A1C     		mov	r2, r3
+ 456 0268 0823     		mov	r3, #8
+ 457 026a 1340     		and	r3, r3, r2
+ 458 026c 002B     		cmp	r3, #0
+ 459 026e 0AD0     		beq	.L40
+ 272:i2c.c         ****   {
+ 273:i2c.c         ****     /* send data */
+ 274:i2c.c         ****     I2C_DATA   = data;
+ 460              		.loc 1 274 0
+ 461 0270 0D4A     		ldr	r2, .L44+4
+ 462 0272 3B1C     		mov	r3, r7
+ 463 0274 1B78     		ldrb	r3, [r3]
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 14
+
+
+ 464 0276 1370     		strb	r3, [r2]
+ 275:i2c.c         ****     I2C_CONCLR = 0x08; /* clear SI flag */ 
+ 465              		.loc 1 275 0
+ 466 0278 0C4A     		ldr	r2, .L44+8
+ 467 027a 0823     		mov	r3, #8
+ 468 027c 1370     		strb	r3, [r2]
+ 276:i2c.c         ****     retCode    = I2C_CODE_OK;
+ 469              		.loc 1 276 0
+ 470 027e FA1D     		add	r2, r7, #7
+ 471 0280 0123     		mov	r3, #1
+ 472 0282 1370     		strb	r3, [r2]
+ 473 0284 03E0     		b	.L42
+ 474              	.L40:
+ 277:i2c.c         ****   }
+ 278:i2c.c         ****   else
+ 279:i2c.c         ****   {
+ 280:i2c.c         ****     /* data register not ready */
+ 281:i2c.c         ****     retCode = I2C_CODE_BUSY;
+ 475              		.loc 1 281 0
+ 476 0286 FB1D     		add	r3, r7, #7
+ 477 0288 0422     		mov	r2, #4
+ 478 028a 5242     		neg	r2, r2
+ 479 028c 1A70     		strb	r2, [r3]
+ 480              	.L42:
+ 282:i2c.c         ****   }
+ 283:i2c.c         **** 
+ 284:i2c.c         ****   return retCode;
+ 481              		.loc 1 284 0
+ 482 028e FB1D     		add	r3, r7, #7
+ 483 0290 1B78     		ldrb	r3, [r3, #0]
+ 484 0292 1B06     		lsl	r3, r3, #24
+ 485 0294 1B16     		asr	r3, r3, #24
+ 285:i2c.c         **** }
+ 486              		.loc 1 285 0
+ 487 0296 181C     		mov	r0, r3
+ 488 0298 BD46     		mov	sp, r7
+ 489 029a 02B0     		add	sp, sp, #8
+ 490              		@ sp needed for prologue
+ 491 029c 80BC     		pop	{r7}
+ 492 029e 02BC     		pop	{r1}
+ 493 02a0 0847     		bx	r1
+ 494              	.L45:
+ 495 02a2 0000     		.align	2
+ 496              	.L44:
+ 497 02a4 00C001E0 		.word	-536756224
+ 498 02a8 08C001E0 		.word	-536756216
+ 499 02ac 18C001E0 		.word	-536756200
+ 500              	.LFE7:
+ 501              		.size	i2cPutChar, .-i2cPutChar
+ 502              		.align	2
+ 503              		.global	i2cGetChar
+ 504              		.code 16
+ 505              		.thumb_func
+ 506              		.type	i2cGetChar, %function
+ 507              	i2cGetChar:
+ 508              	.LFB8:
+ 286:i2c.c         **** 
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 15
+
+
+ 287:i2c.c         **** /******************************************************************************
+ 288:i2c.c         ****  *
+ 289:i2c.c         ****  * Description:
+ 290:i2c.c         ****  *    Read a character. I2C master mode is used.
+ 291:i2c.c         ****  *    This function is also used to prepare if the master shall generate
+ 292:i2c.c         ****  *    acknowledge or not acknowledge.
+ 293:i2c.c         ****  *
+ 294:i2c.c         ****  * Params:
+ 295:i2c.c         ****  *    [in]  mode  - I2C_MODE_ACK0 Set ACK=0. Slave sends next byte
+ 296:i2c.c         ****  *                  I2C_MODE_ACK1 Set ACK=1. Slave sends last byte
+ 297:i2c.c         ****  *                  I2C_MODE_READ Read data from data register
+ 298:i2c.c         ****  *    [out] pData - a pointer to where the data shall be saved.
+ 299:i2c.c         ****  *
+ 300:i2c.c         ****  * Returns:
+ 301:i2c.c         ****  *    I2C_CODE_OK    - successful
+ 302:i2c.c         ****  *    I2C_CODE_EMPTY - no data is available
+ 303:i2c.c         ****  *
+ 304:i2c.c         ****  *****************************************************************************/
+ 305:i2c.c         **** tS8
+ 306:i2c.c         **** i2cGetChar(tU8  mode,
+ 307:i2c.c         ****            tU8* pData)
+ 308:i2c.c         **** {
+ 509              		.loc 1 308 0
+ 510 02b0 80B5     		push	{r7, lr}
+ 511              	.LCFI16:
+ 512 02b2 83B0     		sub	sp, sp, #12
+ 513              	.LCFI17:
+ 514 02b4 00AF     		add	r7, sp, #0
+ 515              	.LCFI18:
+ 516 02b6 3B1C     		mov	r3, r7
+ 517 02b8 1960     		str	r1, [r3]
+ 518 02ba 3A1D     		add	r2, r7, #4
+ 519 02bc 031C     		add	r3, r0, #0
+ 520 02be 1370     		strb	r3, [r2]
+ 309:i2c.c         ****   tS8 retCode = I2C_CODE_OK;
+ 521              		.loc 1 309 0
+ 522 02c0 3A1C     		mov	r2, r7
+ 523 02c2 0B32     		add	r2, r2, #11
+ 524 02c4 0123     		mov	r3, #1
+ 525 02c6 1370     		strb	r3, [r2]
+ 310:i2c.c         **** 
+ 311:i2c.c         ****   if(mode == I2C_MODE_ACK0)
+ 526              		.loc 1 311 0
+ 527 02c8 3B1D     		add	r3, r7, #4
+ 528 02ca 1B78     		ldrb	r3, [r3]
+ 529 02cc 002B     		cmp	r3, #0
+ 530 02ce 0DD1     		bne	.L47
+ 312:i2c.c         ****   {
+ 313:i2c.c         ****     /* the operation mode is changed from master transmit to master receive */
+ 314:i2c.c         **** 
+ 315:i2c.c         ****     /* set ACK=0 (informs slave to send next byte) */
+ 316:i2c.c         **** 
+ 317:i2c.c         ****     I2C_CONSET |= 0x04; /* AA=1          */
+ 531              		.loc 1 317 0
+ 532 02d0 1F49     		ldr	r1, .L56
+ 533 02d2 1F4B     		ldr	r3, .L56
+ 534 02d4 1B78     		ldrb	r3, [r3]
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 16
+
+
+ 535 02d6 1B06     		lsl	r3, r3, #24
+ 536 02d8 1A0E     		lsr	r2, r3, #24
+ 537 02da 0423     		mov	r3, #4
+ 538 02dc 1343     		orr	r3, r3, r2
+ 539 02de 1B06     		lsl	r3, r3, #24
+ 540 02e0 1B0E     		lsr	r3, r3, #24
+ 541 02e2 0B70     		strb	r3, [r1]
+ 318:i2c.c         ****     I2C_CONCLR = 0x08;  /* clear SI flag */   
+ 542              		.loc 1 318 0
+ 543 02e4 1B4A     		ldr	r2, .L56+4
+ 544 02e6 0823     		mov	r3, #8
+ 545 02e8 1370     		strb	r3, [r2]
+ 546 02ea 25E0     		b	.L49
+ 547              	.L47:
+ 319:i2c.c         ****   }
+ 320:i2c.c         ****   else if(mode == I2C_MODE_ACK1)
+ 548              		.loc 1 320 0
+ 549 02ec 3B1D     		add	r3, r7, #4
+ 550 02ee 1B78     		ldrb	r3, [r3]
+ 551 02f0 012B     		cmp	r3, #1
+ 552 02f2 06D1     		bne	.L50
+ 321:i2c.c         ****   {
+ 322:i2c.c         ****     /* set ACK=1 (informs slave to send last byte) */
+ 323:i2c.c         ****     I2C_CONCLR = 0x04;     
+ 553              		.loc 1 323 0
+ 554 02f4 174A     		ldr	r2, .L56+4
+ 555 02f6 0423     		mov	r3, #4
+ 556 02f8 1370     		strb	r3, [r2]
+ 324:i2c.c         ****     I2C_CONCLR = 0x08; /* clear SI flag */ 
+ 557              		.loc 1 324 0
+ 558 02fa 164A     		ldr	r2, .L56+4
+ 559 02fc 0823     		mov	r3, #8
+ 560 02fe 1370     		strb	r3, [r2]
+ 561 0300 1AE0     		b	.L49
+ 562              	.L50:
+ 325:i2c.c         ****   }
+ 326:i2c.c         ****   else if(mode == I2C_MODE_READ)
+ 563              		.loc 1 326 0
+ 564 0302 3B1D     		add	r3, r7, #4
+ 565 0304 1B78     		ldrb	r3, [r3]
+ 566 0306 022B     		cmp	r3, #2
+ 567 0308 16D1     		bne	.L49
+ 327:i2c.c         ****   {
+ 328:i2c.c         ****     /* check if I2C Data register can be accessed */
+ 329:i2c.c         ****     if((I2C_CONSET & 0x08) != 0)  /* SI = 1 */
+ 568              		.loc 1 329 0
+ 569 030a 114B     		ldr	r3, .L56
+ 570 030c 1B78     		ldrb	r3, [r3]
+ 571 030e 1B06     		lsl	r3, r3, #24
+ 572 0310 1B0E     		lsr	r3, r3, #24
+ 573 0312 1A1C     		mov	r2, r3
+ 574 0314 0823     		mov	r3, #8
+ 575 0316 1340     		and	r3, r3, r2
+ 576 0318 002B     		cmp	r3, #0
+ 577 031a 08D0     		beq	.L53
+ 330:i2c.c         ****     {
+ 331:i2c.c         ****       /* read data  */
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 17
+
+
+ 332:i2c.c         ****       *pData = (tU8) I2C_DATA;
+ 578              		.loc 1 332 0
+ 579 031c 0E4B     		ldr	r3, .L56+8
+ 580 031e 1B78     		ldrb	r3, [r3]
+ 581 0320 1B06     		lsl	r3, r3, #24
+ 582 0322 190E     		lsr	r1, r3, #24
+ 583 0324 3B1C     		mov	r3, r7
+ 584 0326 1A68     		ldr	r2, [r3]
+ 585 0328 0B1C     		add	r3, r1, #0
+ 586 032a 1370     		strb	r3, [r2]
+ 587 032c 04E0     		b	.L49
+ 588              	.L53:
+ 333:i2c.c         ****     }
+ 334:i2c.c         ****     else
+ 335:i2c.c         ****     {
+ 336:i2c.c         ****       /* No data available */
+ 337:i2c.c         ****       retCode = I2C_CODE_EMPTY;
+ 589              		.loc 1 337 0
+ 590 032e 3B1C     		mov	r3, r7
+ 591 0330 0B33     		add	r3, r3, #11
+ 592 0332 0322     		mov	r2, #3
+ 593 0334 5242     		neg	r2, r2
+ 594 0336 1A70     		strb	r2, [r3]
+ 595              	.L49:
+ 338:i2c.c         ****     }
+ 339:i2c.c         ****   }
+ 340:i2c.c         **** 
+ 341:i2c.c         ****   return retCode;
+ 596              		.loc 1 341 0
+ 597 0338 3B1C     		mov	r3, r7
+ 598 033a 0B33     		add	r3, r3, #11
+ 599 033c 1B78     		ldrb	r3, [r3, #0]
+ 600 033e 1B06     		lsl	r3, r3, #24
+ 601 0340 1B16     		asr	r3, r3, #24
+ 342:i2c.c         **** }
+ 602              		.loc 1 342 0
+ 603 0342 181C     		mov	r0, r3
+ 604 0344 BD46     		mov	sp, r7
+ 605 0346 03B0     		add	sp, sp, #12
+ 606              		@ sp needed for prologue
+ 607 0348 80BC     		pop	{r7}
+ 608 034a 02BC     		pop	{r1}
+ 609 034c 0847     		bx	r1
+ 610              	.L57:
+ 611 034e 0000     		.align	2
+ 612              	.L56:
+ 613 0350 00C001E0 		.word	-536756224
+ 614 0354 18C001E0 		.word	-536756200
+ 615 0358 08C001E0 		.word	-536756216
+ 616              	.LFE8:
+ 617              		.size	i2cGetChar, .-i2cGetChar
+ 618              		.align	2
+ 619              		.global	i2cWrite
+ 620              		.code 16
+ 621              		.thumb_func
+ 622              		.type	i2cWrite, %function
+ 623              	i2cWrite:
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 18
+
+
+ 624              	.LFB9:
+ 343:i2c.c         **** 
+ 344:i2c.c         **** /******************************************************************************
+ 345:i2c.c         ****  *
+ 346:i2c.c         ****  * Description:
+ 347:i2c.c         ****  *    Sends data on the I2C network
+ 348:i2c.c         ****  *
+ 349:i2c.c         ****  *    Note: After this function is run, you may need a bus free time before a 
+ 350:i2c.c         ****  *          new data transfer can be initiated.
+ 351:i2c.c         ****  *
+ 352:i2c.c         ****  * Params:
+ 353:i2c.c         ****  *    [in] addr  - address
+ 354:i2c.c         ****  *    [in] pData - data to transmit
+ 355:i2c.c         ****  *    [in] len   - number of bytes to transmit
+ 356:i2c.c         ****  *
+ 357:i2c.c         ****  * Returns:
+ 358:i2c.c         ****  *    I2C_CODE_OK    - successful
+ 359:i2c.c         ****  *    I2C_CODE_ERROR - an error occured
+ 360:i2c.c         ****  *
+ 361:i2c.c         ****  *****************************************************************************/
+ 362:i2c.c         **** tS8
+ 363:i2c.c         **** i2cWrite(tU8  addr,
+ 364:i2c.c         ****          tU8* pData,
+ 365:i2c.c         ****          tU16 len)
+ 366:i2c.c         **** {
+ 625              		.loc 1 366 0
+ 626 035c 80B5     		push	{r7, lr}
+ 627              	.LCFI19:
+ 628 035e 84B0     		sub	sp, sp, #16
+ 629              	.LCFI20:
+ 630 0360 00AF     		add	r7, sp, #0
+ 631              	.LCFI21:
+ 632 0362 3B1D     		add	r3, r7, #4
+ 633 0364 1960     		str	r1, [r3]
+ 634 0366 111C     		mov	r1, r2
+ 635 0368 3A1C     		mov	r2, r7
+ 636 036a 0832     		add	r2, r2, #8
+ 637 036c 031C     		add	r3, r0, #0
+ 638 036e 1370     		strb	r3, [r2]
+ 639 0370 3A1C     		mov	r2, r7
+ 640 0372 0B1C     		add	r3, r1, #0
+ 641 0374 1380     		strh	r3, [r2]
+ 367:i2c.c         ****   tS8 retCode = 0;
+ 642              		.loc 1 367 0
+ 643 0376 3A1C     		mov	r2, r7
+ 644 0378 0D32     		add	r2, r2, #13
+ 645 037a 0023     		mov	r3, #0
+ 646 037c 1370     		strb	r3, [r2]
+ 368:i2c.c         ****   tU8 status  = 0;
+ 647              		.loc 1 368 0
+ 648 037e 3A1C     		mov	r2, r7
+ 649 0380 0E32     		add	r2, r2, #14
+ 650 0382 0023     		mov	r3, #0
+ 651 0384 1370     		strb	r3, [r2]
+ 369:i2c.c         ****   tU8 i       = 0;
+ 652              		.loc 1 369 0
+ 653 0386 3A1C     		mov	r2, r7
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 19
+
+
+ 654 0388 0F32     		add	r2, r2, #15
+ 655 038a 0023     		mov	r3, #0
+ 656 038c 1370     		strb	r3, [r2]
+ 370:i2c.c         **** 
+ 371:i2c.c         ****   /* generate Start condition */
+ 372:i2c.c         ****   retCode = i2cStart();
+ 657              		.loc 1 372 0
+ 658 038e FFF7FEFF 		bl	i2cStart
+ 659 0392 031C     		mov	r3, r0
+ 660 0394 1B06     		lsl	r3, r3, #24
+ 661 0396 1B0E     		lsr	r3, r3, #24
+ 662 0398 3A1C     		mov	r2, r7
+ 663 039a 0D32     		add	r2, r2, #13
+ 664 039c 1370     		strb	r3, [r2]
+ 373:i2c.c         **** 
+ 374:i2c.c         ****   /* Transmit address */
+ 375:i2c.c         ****   if(retCode == I2C_CODE_OK)
+ 665              		.loc 1 375 0
+ 666 039e 3B1C     		mov	r3, r7
+ 667 03a0 0D33     		add	r3, r3, #13
+ 668 03a2 1B78     		ldrb	r3, [r3, #0]
+ 669 03a4 1B06     		lsl	r3, r3, #24
+ 670 03a6 1B16     		asr	r3, r3, #24
+ 671 03a8 012B     		cmp	r3, #1
+ 672 03aa 1FD1     		bne	.L59
+ 376:i2c.c         ****   {
+ 377:i2c.c         ****     /* write SLA+W */
+ 378:i2c.c         ****     retCode = i2cPutChar(addr);
+ 673              		.loc 1 378 0
+ 674 03ac 3B1C     		mov	r3, r7
+ 675 03ae 0833     		add	r3, r3, #8
+ 676 03b0 1B78     		ldrb	r3, [r3]
+ 677 03b2 181C     		mov	r0, r3
+ 678 03b4 FFF7FEFF 		bl	i2cPutChar
+ 679 03b8 031C     		mov	r3, r0
+ 680 03ba 1B06     		lsl	r3, r3, #24
+ 681 03bc 1B0E     		lsr	r3, r3, #24
+ 682 03be 3A1C     		mov	r2, r7
+ 683 03c0 0D32     		add	r2, r2, #13
+ 684 03c2 1370     		strb	r3, [r2]
+ 379:i2c.c         ****     while(retCode == I2C_CODE_BUSY)
+ 685              		.loc 1 379 0
+ 686 03c4 0BE0     		b	.L61
+ 687              	.L62:
+ 380:i2c.c         ****     {
+ 381:i2c.c         ****       retCode = i2cPutChar(addr);
+ 688              		.loc 1 381 0
+ 689 03c6 3B1C     		mov	r3, r7
+ 690 03c8 0833     		add	r3, r3, #8
+ 691 03ca 1B78     		ldrb	r3, [r3]
+ 692 03cc 181C     		mov	r0, r3
+ 693 03ce FFF7FEFF 		bl	i2cPutChar
+ 694 03d2 031C     		mov	r3, r0
+ 695 03d4 1B06     		lsl	r3, r3, #24
+ 696 03d6 1B0E     		lsr	r3, r3, #24
+ 697 03d8 3A1C     		mov	r2, r7
+ 698 03da 0D32     		add	r2, r2, #13
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 20
+
+
+ 699 03dc 1370     		strb	r3, [r2]
+ 700              	.L61:
+ 701              		.loc 1 379 0
+ 702 03de 3B1C     		mov	r3, r7
+ 703 03e0 0D33     		add	r3, r3, #13
+ 704 03e2 1B78     		ldrb	r3, [r3, #0]
+ 705 03e4 1B06     		lsl	r3, r3, #24
+ 706 03e6 1B16     		asr	r3, r3, #24
+ 707 03e8 0433     		add	r3, r3, #4
+ 708 03ea ECD0     		beq	.L62
+ 709              	.L59:
+ 382:i2c.c         ****     }
+ 383:i2c.c         ****   }
+ 384:i2c.c         **** 
+ 385:i2c.c         ****   if(retCode == I2C_CODE_OK)
+ 710              		.loc 1 385 0
+ 711 03ec 3B1C     		mov	r3, r7
+ 712 03ee 0D33     		add	r3, r3, #13
+ 713 03f0 1B78     		ldrb	r3, [r3, #0]
+ 714 03f2 1B06     		lsl	r3, r3, #24
+ 715 03f4 1B16     		asr	r3, r3, #24
+ 716 03f6 012B     		cmp	r3, #1
+ 717 03f8 57D1     		bne	.L63
+ 386:i2c.c         ****   {
+ 387:i2c.c         ****     /* wait until address transmitted and transmit data */
+ 388:i2c.c         ****     for(i = 0; i < len; i++)
+ 718              		.loc 1 388 0
+ 719 03fa 3B1C     		mov	r3, r7
+ 720 03fc 0F33     		add	r3, r3, #15
+ 721 03fe 0022     		mov	r2, #0
+ 722 0400 1A70     		strb	r2, [r3]
+ 723 0402 4BE0     		b	.L65
+ 724              	.L66:
+ 389:i2c.c         ****     {
+ 390:i2c.c         ****       /* wait until data transmitted */
+ 391:i2c.c         **** 
+ 392:i2c.c         ****       while(1)
+ 393:i2c.c         ****       {
+ 394:i2c.c         ****         /* get new status */
+ 395:i2c.c         ****         status = i2cCheckStatus();
+ 725              		.loc 1 395 0
+ 726 0404 FFF7FEFF 		bl	i2cCheckStatus
+ 727 0408 031C     		mov	r3, r0
+ 728 040a 3A1C     		mov	r2, r7
+ 729 040c 0E32     		add	r2, r2, #14
+ 730 040e 1370     		strb	r3, [r2]
+ 396:i2c.c         **** 
+ 397:i2c.c         ****         /* 
+ 398:i2c.c         ****          * SLA+W transmitted, ACK received or
+ 399:i2c.c         ****          * data byte transmitted, ACK received
+ 400:i2c.c         ****          */
+ 401:i2c.c         ****         if( (status == 0x18) || (status == 0x28) )
+ 731              		.loc 1 401 0
+ 732 0410 3B1C     		mov	r3, r7
+ 733 0412 0E33     		add	r3, r3, #14
+ 734 0414 1B78     		ldrb	r3, [r3]
+ 735 0416 182B     		cmp	r3, #24
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 21
+
+
+ 736 0418 04D0     		beq	.L67
+ 737 041a 3B1C     		mov	r3, r7
+ 738 041c 0E33     		add	r3, r3, #14
+ 739 041e 1B78     		ldrb	r3, [r3]
+ 740 0420 282B     		cmp	r3, #40
+ 741 0422 25D1     		bne	.L69
+ 742              	.L67:
+ 402:i2c.c         ****         {
+ 403:i2c.c         ****           /* Data transmitted and ACK received */
+ 404:i2c.c         **** 
+ 405:i2c.c         ****           /* write data */
+ 406:i2c.c         ****           retCode = i2cPutChar(*pData);
+ 743              		.loc 1 406 0
+ 744 0424 3B1D     		add	r3, r7, #4
+ 745 0426 1B68     		ldr	r3, [r3]
+ 746 0428 1B78     		ldrb	r3, [r3]
+ 747 042a 181C     		mov	r0, r3
+ 748 042c FFF7FEFF 		bl	i2cPutChar
+ 749 0430 031C     		mov	r3, r0
+ 750 0432 1B06     		lsl	r3, r3, #24
+ 751 0434 1B0E     		lsr	r3, r3, #24
+ 752 0436 3A1C     		mov	r2, r7
+ 753 0438 0D32     		add	r2, r2, #13
+ 754 043a 1370     		strb	r3, [r2]
+ 407:i2c.c         ****           while(retCode == I2C_CODE_BUSY)
+ 755              		.loc 1 407 0
+ 756 043c 0BE0     		b	.L70
+ 757              	.L71:
+ 408:i2c.c         ****           {
+ 409:i2c.c         ****             retCode = i2cPutChar(*pData);
+ 758              		.loc 1 409 0
+ 759 043e 3B1D     		add	r3, r7, #4
+ 760 0440 1B68     		ldr	r3, [r3]
+ 761 0442 1B78     		ldrb	r3, [r3]
+ 762 0444 181C     		mov	r0, r3
+ 763 0446 FFF7FEFF 		bl	i2cPutChar
+ 764 044a 031C     		mov	r3, r0
+ 765 044c 1B06     		lsl	r3, r3, #24
+ 766 044e 1B0E     		lsr	r3, r3, #24
+ 767 0450 3A1C     		mov	r2, r7
+ 768 0452 0D32     		add	r2, r2, #13
+ 769 0454 1370     		strb	r3, [r2]
+ 770              	.L70:
+ 771              		.loc 1 407 0
+ 772 0456 3B1C     		mov	r3, r7
+ 773 0458 0D33     		add	r3, r3, #13
+ 774 045a 1B78     		ldrb	r3, [r3, #0]
+ 775 045c 1B06     		lsl	r3, r3, #24
+ 776 045e 1B16     		asr	r3, r3, #24
+ 777 0460 0433     		add	r3, r3, #4
+ 778 0462 ECD0     		beq	.L71
+ 410:i2c.c         ****           }
+ 411:i2c.c         ****           pData++;
+ 779              		.loc 1 411 0
+ 780 0464 3A1D     		add	r2, r7, #4
+ 781 0466 3B1D     		add	r3, r7, #4
+ 782 0468 1B68     		ldr	r3, [r3]
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 22
+
+
+ 783 046a 0133     		add	r3, r3, #1
+ 784 046c 1360     		str	r3, [r2]
+ 412:i2c.c         **** 
+ 413:i2c.c         ****           break;
+ 785              		.loc 1 413 0
+ 786 046e 0EE0     		b	.L73
+ 787              	.L69:
+ 414:i2c.c         ****         }
+ 415:i2c.c         **** 
+ 416:i2c.c         ****         /* no relevant status information */
+ 417:i2c.c         ****         else if( status != 0xf8 )
+ 788              		.loc 1 417 0
+ 789 0470 3B1C     		mov	r3, r7
+ 790 0472 0E33     		add	r3, r3, #14
+ 791 0474 1B78     		ldrb	r3, [r3]
+ 792 0476 F82B     		cmp	r3, #248
+ 793 0478 C4D0     		beq	.L66
+ 418:i2c.c         ****         {
+ 419:i2c.c         ****           /* error */
+ 420:i2c.c         ****           i = len;
+ 794              		.loc 1 420 0
+ 795 047a 3A1C     		mov	r2, r7
+ 796 047c 0F32     		add	r2, r2, #15
+ 797 047e 3B1C     		mov	r3, r7
+ 798 0480 1B88     		ldrh	r3, [r3]
+ 799 0482 1370     		strb	r3, [r2]
+ 421:i2c.c         ****           retCode = I2C_CODE_ERROR;
+ 800              		.loc 1 421 0
+ 801 0484 3A1C     		mov	r2, r7
+ 802 0486 0D32     		add	r2, r2, #13
+ 803 0488 0123     		mov	r3, #1
+ 804 048a 5B42     		neg	r3, r3
+ 805 048c 1370     		strb	r3, [r2]
+ 806              	.L73:
+ 807              		.loc 1 388 0
+ 808 048e 3A1C     		mov	r2, r7
+ 809 0490 0F32     		add	r2, r2, #15
+ 810 0492 3B1C     		mov	r3, r7
+ 811 0494 0F33     		add	r3, r3, #15
+ 812 0496 1B78     		ldrb	r3, [r3]
+ 813 0498 0133     		add	r3, r3, #1
+ 814 049a 1370     		strb	r3, [r2]
+ 815              	.L65:
+ 816 049c 3B1C     		mov	r3, r7
+ 817 049e 0F33     		add	r3, r3, #15
+ 818 04a0 1A78     		ldrb	r2, [r3]
+ 819 04a2 3B1C     		mov	r3, r7
+ 820 04a4 1B88     		ldrh	r3, [r3]
+ 821 04a6 9342     		cmp	r3, r2
+ 822 04a8 ACD8     		bhi	.L66
+ 823              	.L63:
+ 422:i2c.c         ****           break;
+ 423:i2c.c         ****         }
+ 424:i2c.c         ****       }
+ 425:i2c.c         ****     }
+ 426:i2c.c         ****   }
+ 427:i2c.c         **** 
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 23
+
+
+ 428:i2c.c         ****   /* wait until data transmitted */
+ 429:i2c.c         ****   while(1)
+ 430:i2c.c         ****   {
+ 431:i2c.c         ****     /* get new status */
+ 432:i2c.c         ****     status = i2cCheckStatus();
+ 824              		.loc 1 432 0
+ 825 04aa FFF7FEFF 		bl	i2cCheckStatus
+ 826 04ae 031C     		mov	r3, r0
+ 827 04b0 3A1C     		mov	r2, r7
+ 828 04b2 0E32     		add	r2, r2, #14
+ 829 04b4 1370     		strb	r3, [r2]
+ 433:i2c.c         **** 
+ 434:i2c.c         ****     /* 
+ 435:i2c.c         ****      * SLA+W transmitted, ACK received or
+ 436:i2c.c         ****      * data byte transmitted, ACK received
+ 437:i2c.c         ****      */
+ 438:i2c.c         ****     if( (status == 0x18) || (status == 0x28) )
+ 830              		.loc 1 438 0
+ 831 04b6 3B1C     		mov	r3, r7
+ 832 04b8 0E33     		add	r3, r3, #14
+ 833 04ba 1B78     		ldrb	r3, [r3]
+ 834 04bc 182B     		cmp	r3, #24
+ 835 04be 13D0     		beq	.L76
+ 836 04c0 3B1C     		mov	r3, r7
+ 837 04c2 0E33     		add	r3, r3, #14
+ 838 04c4 1B78     		ldrb	r3, [r3]
+ 839 04c6 282B     		cmp	r3, #40
+ 840 04c8 0ED0     		beq	.L76
+ 439:i2c.c         ****     {
+ 440:i2c.c         ****       /* data transmitted and ACK received */
+ 441:i2c.c         ****       break;
+ 442:i2c.c         ****     }
+ 443:i2c.c         **** 
+ 444:i2c.c         ****     /* no relevant status information */
+ 445:i2c.c         ****     else if(status != 0xf8 )
+ 841              		.loc 1 445 0
+ 842 04ca 3B1C     		mov	r3, r7
+ 843 04cc 0E33     		add	r3, r3, #14
+ 844 04ce 1B78     		ldrb	r3, [r3]
+ 845 04d0 F82B     		cmp	r3, #248
+ 846 04d2 EAD0     		beq	.L63
+ 446:i2c.c         ****     {
+ 447:i2c.c         ****       /* error */
+ 448:i2c.c         ****       i = len;
+ 847              		.loc 1 448 0
+ 848 04d4 3A1C     		mov	r2, r7
+ 849 04d6 0F32     		add	r2, r2, #15
+ 850 04d8 3B1C     		mov	r3, r7
+ 851 04da 1B88     		ldrh	r3, [r3]
+ 852 04dc 1370     		strb	r3, [r2]
+ 449:i2c.c         ****       retCode = I2C_CODE_ERROR;
+ 853              		.loc 1 449 0
+ 854 04de 3A1C     		mov	r2, r7
+ 855 04e0 0D32     		add	r2, r2, #13
+ 856 04e2 0123     		mov	r3, #1
+ 857 04e4 5B42     		neg	r3, r3
+ 858 04e6 1370     		strb	r3, [r2]
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 24
+
+
+ 859              	.L76:
+ 450:i2c.c         ****       break;
+ 451:i2c.c         ****     }
+ 452:i2c.c         ****   }
+ 453:i2c.c         **** 
+ 454:i2c.c         ****   /* generate Stop condition */
+ 455:i2c.c         ****   i2cStop();
+ 860              		.loc 1 455 0
+ 861 04e8 FFF7FEFF 		bl	i2cStop
+ 456:i2c.c         **** 
+ 457:i2c.c         ****   return retCode;
+ 862              		.loc 1 457 0
+ 863 04ec 3B1C     		mov	r3, r7
+ 864 04ee 0D33     		add	r3, r3, #13
+ 865 04f0 1B78     		ldrb	r3, [r3, #0]
+ 866 04f2 1B06     		lsl	r3, r3, #24
+ 867 04f4 1B16     		asr	r3, r3, #24
+ 458:i2c.c         **** }
+ 868              		.loc 1 458 0
+ 869 04f6 181C     		mov	r0, r3
+ 870 04f8 BD46     		mov	sp, r7
+ 871 04fa 04B0     		add	sp, sp, #16
+ 872              		@ sp needed for prologue
+ 873 04fc 80BC     		pop	{r7}
+ 874 04fe 02BC     		pop	{r1}
+ 875 0500 0847     		bx	r1
+ 876              	.LFE9:
+ 877              		.size	i2cWrite, .-i2cWrite
+ 878 0502 0000     		.align	2
+ 879              		.global	i2cWaitTransmit
+ 880              		.code 16
+ 881              		.thumb_func
+ 882              		.type	i2cWaitTransmit, %function
+ 883              	i2cWaitTransmit:
+ 884              	.LFB10:
+ 459:i2c.c         **** 
+ 460:i2c.c         **** tS8
+ 461:i2c.c         **** i2cWaitTransmit(void)
+ 462:i2c.c         **** {
+ 885              		.loc 1 462 0
+ 886 0504 80B5     		push	{r7, lr}
+ 887              	.LCFI22:
+ 888 0506 82B0     		sub	sp, sp, #8
+ 889              	.LCFI23:
+ 890 0508 00AF     		add	r7, sp, #0
+ 891              	.LCFI24:
+ 463:i2c.c         ****   tU8 status = 0;
+ 892              		.loc 1 463 0
+ 893 050a FB1D     		add	r3, r7, #7
+ 894 050c 0022     		mov	r2, #0
+ 895 050e 1A70     		strb	r2, [r3]
+ 896              	.L83:
+ 464:i2c.c         **** 
+ 465:i2c.c         ****   /* wait until data transmitted */
+ 466:i2c.c         ****   while(1)
+ 467:i2c.c         ****   {
+ 468:i2c.c         ****     /* get new status */
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 25
+
+
+ 469:i2c.c         ****     status = i2cCheckStatus();
+ 897              		.loc 1 469 0
+ 898 0510 FFF7FEFF 		bl	i2cCheckStatus
+ 899 0514 031C     		mov	r3, r0
+ 900 0516 FA1D     		add	r2, r7, #7
+ 901 0518 1370     		strb	r3, [r2]
+ 470:i2c.c         **** 
+ 471:i2c.c         ****     /* 
+ 472:i2c.c         ****      * SLA+W transmitted, ACK received or
+ 473:i2c.c         ****      * data byte transmitted, ACK received
+ 474:i2c.c         ****      */
+ 475:i2c.c         ****     if( (status == 0x18) || (status == 0x28) )
+ 902              		.loc 1 475 0
+ 903 051a FB1D     		add	r3, r7, #7
+ 904 051c 1B78     		ldrb	r3, [r3]
+ 905 051e 182B     		cmp	r3, #24
+ 906 0520 03D0     		beq	.L84
+ 907 0522 FB1D     		add	r3, r7, #7
+ 908 0524 1B78     		ldrb	r3, [r3]
+ 909 0526 282B     		cmp	r3, #40
+ 910 0528 02D1     		bne	.L86
+ 911              	.L84:
+ 476:i2c.c         ****     {
+ 477:i2c.c         ****       /* data transmitted and ACK received */
+ 478:i2c.c         ****       return I2C_CODE_OK;
+ 912              		.loc 1 478 0
+ 913 052a 0123     		mov	r3, #1
+ 914 052c 3B60     		str	r3, [r7]
+ 915 052e 08E0     		b	.L87
+ 916              	.L86:
+ 479:i2c.c         ****     }
+ 480:i2c.c         **** 
+ 481:i2c.c         ****     /* no relevant status information */
+ 482:i2c.c         ****     else if(status != 0xf8 )
+ 917              		.loc 1 482 0
+ 918 0530 FB1D     		add	r3, r7, #7
+ 919 0532 1B78     		ldrb	r3, [r3]
+ 920 0534 F82B     		cmp	r3, #248
+ 921 0536 EBD0     		beq	.L83
+ 483:i2c.c         ****     {
+ 484:i2c.c         ****       /* error */
+ 485:i2c.c         **** 
+ 486:i2c.c         ****       return I2C_CODE_ERROR;
+ 922              		.loc 1 486 0
+ 923 0538 0123     		mov	r3, #1
+ 924 053a 3B60     		str	r3, [r7]
+ 925 053c 3B68     		ldr	r3, [r7]
+ 926 053e 5B42     		neg	r3, r3
+ 927 0540 3B60     		str	r3, [r7]
+ 928              	.L87:
+ 487:i2c.c         ****     }
+ 488:i2c.c         ****   }
+ 929              		.loc 1 488 0
+ 930 0542 3B68     		ldr	r3, [r7]
+ 489:i2c.c         **** }
+ 931              		.loc 1 489 0
+ 932 0544 181C     		mov	r0, r3
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 26
+
+
+ 933 0546 BD46     		mov	sp, r7
+ 934 0548 02B0     		add	sp, sp, #8
+ 935              		@ sp needed for prologue
+ 936 054a 80BC     		pop	{r7}
+ 937 054c 02BC     		pop	{r1}
+ 938 054e 0847     		bx	r1
+ 939              	.LFE10:
+ 940              		.size	i2cWaitTransmit, .-i2cWaitTransmit
+ 941              		.align	2
+ 942              		.global	i2cWriteWithWait
+ 943              		.code 16
+ 944              		.thumb_func
+ 945              		.type	i2cWriteWithWait, %function
+ 946              	i2cWriteWithWait:
+ 947              	.LFB11:
+ 490:i2c.c         **** 
+ 491:i2c.c         **** tS8
+ 492:i2c.c         **** i2cWriteWithWait(tU8 data)
+ 493:i2c.c         **** {
+ 948              		.loc 1 493 0
+ 949 0550 80B5     		push	{r7, lr}
+ 950              	.LCFI25:
+ 951 0552 82B0     		sub	sp, sp, #8
+ 952              	.LCFI26:
+ 953 0554 00AF     		add	r7, sp, #0
+ 954              	.LCFI27:
+ 955 0556 031C     		mov	r3, r0
+ 956 0558 3A1C     		mov	r2, r7
+ 957 055a 1370     		strb	r3, [r2]
+ 494:i2c.c         ****   tS8 retCode = 0;
+ 958              		.loc 1 494 0
+ 959 055c FA1D     		add	r2, r7, #7
+ 960 055e 0023     		mov	r3, #0
+ 961 0560 1370     		strb	r3, [r2]
+ 495:i2c.c         ****   
+ 496:i2c.c         ****   retCode = i2cPutChar(data);
+ 962              		.loc 1 496 0
+ 963 0562 3B1C     		mov	r3, r7
+ 964 0564 1B78     		ldrb	r3, [r3]
+ 965 0566 181C     		mov	r0, r3
+ 966 0568 FFF7FEFF 		bl	i2cPutChar
+ 967 056c 031C     		mov	r3, r0
+ 968 056e 1B06     		lsl	r3, r3, #24
+ 969 0570 1B0E     		lsr	r3, r3, #24
+ 970 0572 FA1D     		add	r2, r7, #7
+ 971 0574 1370     		strb	r3, [r2]
+ 497:i2c.c         ****   while(retCode == I2C_CODE_BUSY)
+ 972              		.loc 1 497 0
+ 973 0576 09E0     		b	.L92
+ 974              	.L93:
+ 498:i2c.c         ****   {
+ 499:i2c.c         ****     retCode = i2cPutChar(data);
+ 975              		.loc 1 499 0
+ 976 0578 3B1C     		mov	r3, r7
+ 977 057a 1B78     		ldrb	r3, [r3]
+ 978 057c 181C     		mov	r0, r3
+ 979 057e FFF7FEFF 		bl	i2cPutChar
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 27
+
+
+ 980 0582 031C     		mov	r3, r0
+ 981 0584 1B06     		lsl	r3, r3, #24
+ 982 0586 1B0E     		lsr	r3, r3, #24
+ 983 0588 FA1D     		add	r2, r7, #7
+ 984 058a 1370     		strb	r3, [r2]
+ 985              	.L92:
+ 986              		.loc 1 497 0
+ 987 058c FB1D     		add	r3, r7, #7
+ 988 058e 1B78     		ldrb	r3, [r3, #0]
+ 989 0590 1B06     		lsl	r3, r3, #24
+ 990 0592 1B16     		asr	r3, r3, #24
+ 991 0594 0433     		add	r3, r3, #4
+ 992 0596 EFD0     		beq	.L93
+ 500:i2c.c         ****   }
+ 501:i2c.c         **** 
+ 502:i2c.c         ****   if(retCode == I2C_CODE_OK)
+ 993              		.loc 1 502 0
+ 994 0598 FB1D     		add	r3, r7, #7
+ 995 059a 1B78     		ldrb	r3, [r3, #0]
+ 996 059c 1B06     		lsl	r3, r3, #24
+ 997 059e 1B16     		asr	r3, r3, #24
+ 998 05a0 012B     		cmp	r3, #1
+ 999 05a2 06D1     		bne	.L95
+ 503:i2c.c         ****     retCode = i2cWaitTransmit();
+ 1000              		.loc 1 503 0
+ 1001 05a4 FFF7FEFF 		bl	i2cWaitTransmit
+ 1002 05a8 031C     		mov	r3, r0
+ 1003 05aa 1B06     		lsl	r3, r3, #24
+ 1004 05ac 1B0E     		lsr	r3, r3, #24
+ 1005 05ae FA1D     		add	r2, r7, #7
+ 1006 05b0 1370     		strb	r3, [r2]
+ 1007              	.L95:
+ 504:i2c.c         **** 
+ 505:i2c.c         ****   return retCode;
+ 1008              		.loc 1 505 0
+ 1009 05b2 FB1D     		add	r3, r7, #7
+ 1010 05b4 1B78     		ldrb	r3, [r3, #0]
+ 1011 05b6 1B06     		lsl	r3, r3, #24
+ 1012 05b8 1B16     		asr	r3, r3, #24
+ 506:i2c.c         **** }
+ 1013              		.loc 1 506 0
+ 1014 05ba 181C     		mov	r0, r3
+ 1015 05bc BD46     		mov	sp, r7
+ 1016 05be 02B0     		add	sp, sp, #8
+ 1017              		@ sp needed for prologue
+ 1018 05c0 80BC     		pop	{r7}
+ 1019 05c2 02BC     		pop	{r1}
+ 1020 05c4 0847     		bx	r1
+ 1021              	.LFE11:
+ 1022              		.size	i2cWriteWithWait, .-i2cWriteWithWait
+ 1023 05c6 0000     		.align	2
+ 1024              		.global	i2cMyWrite
+ 1025              		.code 16
+ 1026              		.thumb_func
+ 1027              		.type	i2cMyWrite, %function
+ 1028              	i2cMyWrite:
+ 1029              	.LFB12:
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 28
+
+
+ 507:i2c.c         **** 
+ 508:i2c.c         **** tS8
+ 509:i2c.c         **** i2cMyWrite(tU8  addr,
+ 510:i2c.c         ****            tU8* pData,
+ 511:i2c.c         ****            tU16 len)
+ 512:i2c.c         **** {
+ 1030              		.loc 1 512 0
+ 1031 05c8 80B5     		push	{r7, lr}
+ 1032              	.LCFI28:
+ 1033 05ca 84B0     		sub	sp, sp, #16
+ 1034              	.LCFI29:
+ 1035 05cc 00AF     		add	r7, sp, #0
+ 1036              	.LCFI30:
+ 1037 05ce 3B1D     		add	r3, r7, #4
+ 1038 05d0 1960     		str	r1, [r3]
+ 1039 05d2 111C     		mov	r1, r2
+ 1040 05d4 3A1C     		mov	r2, r7
+ 1041 05d6 0832     		add	r2, r2, #8
+ 1042 05d8 031C     		add	r3, r0, #0
+ 1043 05da 1370     		strb	r3, [r2]
+ 1044 05dc 3A1C     		mov	r2, r7
+ 1045 05de 0B1C     		add	r3, r1, #0
+ 1046 05e0 1380     		strh	r3, [r2]
+ 513:i2c.c         ****   tS8 retCode = 0;
+ 1047              		.loc 1 513 0
+ 1048 05e2 3A1C     		mov	r2, r7
+ 1049 05e4 0E32     		add	r2, r2, #14
+ 1050 05e6 0023     		mov	r3, #0
+ 1051 05e8 1370     		strb	r3, [r2]
+ 514:i2c.c         ****   tU8 i       = 0;
+ 1052              		.loc 1 514 0
+ 1053 05ea 3A1C     		mov	r2, r7
+ 1054 05ec 0F32     		add	r2, r2, #15
+ 1055 05ee 0023     		mov	r3, #0
+ 1056 05f0 1370     		strb	r3, [r2]
+ 515:i2c.c         **** 
+ 516:i2c.c         ****   do
+ 517:i2c.c         ****   {
+ 518:i2c.c         ****     /* generate Start condition */
+ 519:i2c.c         ****     retCode = i2cStart();
+ 1057              		.loc 1 519 0
+ 1058 05f2 FFF7FEFF 		bl	i2cStart
+ 1059 05f6 031C     		mov	r3, r0
+ 1060 05f8 1B06     		lsl	r3, r3, #24
+ 1061 05fa 1B0E     		lsr	r3, r3, #24
+ 1062 05fc 3A1C     		mov	r2, r7
+ 1063 05fe 0E32     		add	r2, r2, #14
+ 1064 0600 1370     		strb	r3, [r2]
+ 520:i2c.c         ****     if(retCode != I2C_CODE_OK)
+ 1065              		.loc 1 520 0
+ 1066 0602 3B1C     		mov	r3, r7
+ 1067 0604 0E33     		add	r3, r3, #14
+ 1068 0606 1B78     		ldrb	r3, [r3, #0]
+ 1069 0608 1B06     		lsl	r3, r3, #24
+ 1070 060a 1B16     		asr	r3, r3, #24
+ 1071 060c 012B     		cmp	r3, #1
+ 1072 060e 3DD1     		bne	.L99
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 29
+
+
+ 521:i2c.c         ****       break;
+ 522:i2c.c         **** 
+ 523:i2c.c         ****     /* write address */
+ 524:i2c.c         ****     retCode = i2cWriteWithWait(addr);
+ 1073              		.loc 1 524 0
+ 1074 0610 3B1C     		mov	r3, r7
+ 1075 0612 0833     		add	r3, r3, #8
+ 1076 0614 1B78     		ldrb	r3, [r3]
+ 1077 0616 181C     		mov	r0, r3
+ 1078 0618 FFF7FEFF 		bl	i2cWriteWithWait
+ 1079 061c 031C     		mov	r3, r0
+ 1080 061e 1B06     		lsl	r3, r3, #24
+ 1081 0620 1B0E     		lsr	r3, r3, #24
+ 1082 0622 3A1C     		mov	r2, r7
+ 1083 0624 0E32     		add	r2, r2, #14
+ 1084 0626 1370     		strb	r3, [r2]
+ 525:i2c.c         ****     if(retCode != I2C_CODE_OK)
+ 1085              		.loc 1 525 0
+ 1086 0628 3B1C     		mov	r3, r7
+ 1087 062a 0E33     		add	r3, r3, #14
+ 1088 062c 1B78     		ldrb	r3, [r3, #0]
+ 1089 062e 1B06     		lsl	r3, r3, #24
+ 1090 0630 1B16     		asr	r3, r3, #24
+ 1091 0632 012B     		cmp	r3, #1
+ 1092 0634 2AD1     		bne	.L99
+ 526:i2c.c         ****       break;
+ 527:i2c.c         **** 
+ 528:i2c.c         ****     for(i = 0; i <len; i++)
+ 1093              		.loc 1 528 0
+ 1094 0636 3B1C     		mov	r3, r7
+ 1095 0638 0F33     		add	r3, r3, #15
+ 1096 063a 0022     		mov	r2, #0
+ 1097 063c 1A70     		strb	r2, [r3]
+ 1098 063e 1EE0     		b	.L102
+ 1099              	.L103:
+ 529:i2c.c         ****     {
+ 530:i2c.c         ****       retCode = i2cWriteWithWait(*pData);
+ 1100              		.loc 1 530 0
+ 1101 0640 3B1D     		add	r3, r7, #4
+ 1102 0642 1B68     		ldr	r3, [r3]
+ 1103 0644 1B78     		ldrb	r3, [r3]
+ 1104 0646 181C     		mov	r0, r3
+ 1105 0648 FFF7FEFF 		bl	i2cWriteWithWait
+ 1106 064c 031C     		mov	r3, r0
+ 1107 064e 1B06     		lsl	r3, r3, #24
+ 1108 0650 1B0E     		lsr	r3, r3, #24
+ 1109 0652 3A1C     		mov	r2, r7
+ 1110 0654 0E32     		add	r2, r2, #14
+ 1111 0656 1370     		strb	r3, [r2]
+ 531:i2c.c         ****       if(retCode != I2C_CODE_OK)
+ 1112              		.loc 1 531 0
+ 1113 0658 3B1C     		mov	r3, r7
+ 1114 065a 0E33     		add	r3, r3, #14
+ 1115 065c 1B78     		ldrb	r3, [r3, #0]
+ 1116 065e 1B06     		lsl	r3, r3, #24
+ 1117 0660 1B16     		asr	r3, r3, #24
+ 1118 0662 012B     		cmp	r3, #1
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 30
+
+
+ 1119 0664 12D1     		bne	.L99
+ 532:i2c.c         ****         break;
+ 533:i2c.c         **** 
+ 534:i2c.c         ****       pData++;
+ 1120              		.loc 1 534 0
+ 1121 0666 3A1D     		add	r2, r7, #4
+ 1122 0668 3B1D     		add	r3, r7, #4
+ 1123 066a 1B68     		ldr	r3, [r3]
+ 1124 066c 0133     		add	r3, r3, #1
+ 1125 066e 1360     		str	r3, [r2]
+ 1126              		.loc 1 528 0
+ 1127 0670 3A1C     		mov	r2, r7
+ 1128 0672 0F32     		add	r2, r2, #15
+ 1129 0674 3B1C     		mov	r3, r7
+ 1130 0676 0F33     		add	r3, r3, #15
+ 1131 0678 1B78     		ldrb	r3, [r3]
+ 1132 067a 0133     		add	r3, r3, #1
+ 1133 067c 1370     		strb	r3, [r2]
+ 1134              	.L102:
+ 1135 067e 3B1C     		mov	r3, r7
+ 1136 0680 0F33     		add	r3, r3, #15
+ 1137 0682 1A78     		ldrb	r2, [r3]
+ 1138 0684 3B1C     		mov	r3, r7
+ 1139 0686 1B88     		ldrh	r3, [r3]
+ 1140 0688 9342     		cmp	r3, r2
+ 1141 068a D9D8     		bhi	.L103
+ 1142              	.L99:
+ 535:i2c.c         ****     }
+ 536:i2c.c         **** 
+ 537:i2c.c         ****   } while(0);
+ 538:i2c.c         **** 
+ 539:i2c.c         ****   /* generate Stop condition */
+ 540:i2c.c         ****   i2cStop();
+ 1143              		.loc 1 540 0
+ 1144 068c FFF7FEFF 		bl	i2cStop
+ 541:i2c.c         **** 
+ 542:i2c.c         **** 
+ 543:i2c.c         ****   return retCode;
+ 1145              		.loc 1 543 0
+ 1146 0690 3B1C     		mov	r3, r7
+ 1147 0692 0E33     		add	r3, r3, #14
+ 1148 0694 1B78     		ldrb	r3, [r3, #0]
+ 1149 0696 1B06     		lsl	r3, r3, #24
+ 1150 0698 1B16     		asr	r3, r3, #24
+ 544:i2c.c         **** }
+ 1151              		.loc 1 544 0
+ 1152 069a 181C     		mov	r0, r3
+ 1153 069c BD46     		mov	sp, r7
+ 1154 069e 04B0     		add	sp, sp, #16
+ 1155              		@ sp needed for prologue
+ 1156 06a0 80BC     		pop	{r7}
+ 1157 06a2 02BC     		pop	{r1}
+ 1158 06a4 0847     		bx	r1
+ 1159              	.LFE12:
+ 1160              		.size	i2cMyWrite, .-i2cMyWrite
+ 1161 06a6 0000     		.align	2
+ 1162              		.global	i2cRead
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 31
+
+
+ 1163              		.code 16
+ 1164              		.thumb_func
+ 1165              		.type	i2cRead, %function
+ 1166              	i2cRead:
+ 1167              	.LFB13:
+ 545:i2c.c         **** 
+ 546:i2c.c         **** 
+ 547:i2c.c         **** /******************************************************************************
+ 548:i2c.c         ****  *
+ 549:i2c.c         ****  * Description:
+ 550:i2c.c         ****  *    Read a specified number of bytes from the I2C network.
+ 551:i2c.c         ****  *
+ 552:i2c.c         ****  *    Note: After this function is run, you may need a bus free time before a 
+ 553:i2c.c         ****  *          new data transfer can be initiated.
+ 554:i2c.c         ****  *
+ 555:i2c.c         ****  * Params:
+ 556:i2c.c         ****  *    [in] addr - address
+ 557:i2c.c         ****  *    [in] pBuf - receive buffer
+ 558:i2c.c         ****  *    [in] len  - number of bytes to receive
+ 559:i2c.c         ****  *
+ 560:i2c.c         ****  * Returns:
+ 561:i2c.c         ****  *    I2C_CODE_OK or I2C status code
+ 562:i2c.c         ****  *
+ 563:i2c.c         ****  *****************************************************************************/
+ 564:i2c.c         **** tS8
+ 565:i2c.c         **** i2cRead(tU8  addr,
+ 566:i2c.c         ****         tU8* pBuf,
+ 567:i2c.c         ****         tU16 len)
+ 568:i2c.c         **** {
+ 1168              		.loc 1 568 0
+ 1169 06a8 80B5     		push	{r7, lr}
+ 1170              	.LCFI31:
+ 1171 06aa 84B0     		sub	sp, sp, #16
+ 1172              	.LCFI32:
+ 1173 06ac 00AF     		add	r7, sp, #0
+ 1174              	.LCFI33:
+ 1175 06ae 3B1D     		add	r3, r7, #4
+ 1176 06b0 1960     		str	r1, [r3]
+ 1177 06b2 111C     		mov	r1, r2
+ 1178 06b4 3A1C     		mov	r2, r7
+ 1179 06b6 0832     		add	r2, r2, #8
+ 1180 06b8 031C     		add	r3, r0, #0
+ 1181 06ba 1370     		strb	r3, [r2]
+ 1182 06bc 3A1C     		mov	r2, r7
+ 1183 06be 0B1C     		add	r3, r1, #0
+ 1184 06c0 1380     		strh	r3, [r2]
+ 569:i2c.c         ****   tS8 retCode = 0;
+ 1185              		.loc 1 569 0
+ 1186 06c2 3A1C     		mov	r2, r7
+ 1187 06c4 0D32     		add	r2, r2, #13
+ 1188 06c6 0023     		mov	r3, #0
+ 1189 06c8 1370     		strb	r3, [r2]
+ 570:i2c.c         ****   tU8 status  = 0;
+ 1190              		.loc 1 570 0
+ 1191 06ca 3A1C     		mov	r2, r7
+ 1192 06cc 0E32     		add	r2, r2, #14
+ 1193 06ce 0023     		mov	r3, #0
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 32
+
+
+ 1194 06d0 1370     		strb	r3, [r2]
+ 571:i2c.c         ****   tU8 i       = 0;
+ 1195              		.loc 1 571 0
+ 1196 06d2 3A1C     		mov	r2, r7
+ 1197 06d4 0F32     		add	r2, r2, #15
+ 1198 06d6 0023     		mov	r3, #0
+ 1199 06d8 1370     		strb	r3, [r2]
+ 572:i2c.c         **** 
+ 573:i2c.c         ****   /* Generate Start condition */
+ 574:i2c.c         ****   retCode = i2cStart();
+ 1200              		.loc 1 574 0
+ 1201 06da FFF7FEFF 		bl	i2cStart
+ 1202 06de 031C     		mov	r3, r0
+ 1203 06e0 1B06     		lsl	r3, r3, #24
+ 1204 06e2 1B0E     		lsr	r3, r3, #24
+ 1205 06e4 3A1C     		mov	r2, r7
+ 1206 06e6 0D32     		add	r2, r2, #13
+ 1207 06e8 1370     		strb	r3, [r2]
+ 575:i2c.c         **** 
+ 576:i2c.c         ****   /* Transmit address */
+ 577:i2c.c         ****   if(retCode == I2C_CODE_OK )
+ 1208              		.loc 1 577 0
+ 1209 06ea 3B1C     		mov	r3, r7
+ 1210 06ec 0D33     		add	r3, r3, #13
+ 1211 06ee 1B78     		ldrb	r3, [r3, #0]
+ 1212 06f0 1B06     		lsl	r3, r3, #24
+ 1213 06f2 1B16     		asr	r3, r3, #24
+ 1214 06f4 012B     		cmp	r3, #1
+ 1215 06f6 1FD1     		bne	.L107
+ 578:i2c.c         ****   {
+ 579:i2c.c         ****     /* write SLA+R */
+ 580:i2c.c         ****     retCode = i2cPutChar(addr);
+ 1216              		.loc 1 580 0
+ 1217 06f8 3B1C     		mov	r3, r7
+ 1218 06fa 0833     		add	r3, r3, #8
+ 1219 06fc 1B78     		ldrb	r3, [r3]
+ 1220 06fe 181C     		mov	r0, r3
+ 1221 0700 FFF7FEFF 		bl	i2cPutChar
+ 1222 0704 031C     		mov	r3, r0
+ 1223 0706 1B06     		lsl	r3, r3, #24
+ 1224 0708 1B0E     		lsr	r3, r3, #24
+ 1225 070a 3A1C     		mov	r2, r7
+ 1226 070c 0D32     		add	r2, r2, #13
+ 1227 070e 1370     		strb	r3, [r2]
+ 581:i2c.c         ****     while(retCode == I2C_CODE_BUSY)
+ 1228              		.loc 1 581 0
+ 1229 0710 0BE0     		b	.L109
+ 1230              	.L110:
+ 582:i2c.c         ****     {
+ 583:i2c.c         ****       retCode = i2cPutChar(addr);
+ 1231              		.loc 1 583 0
+ 1232 0712 3B1C     		mov	r3, r7
+ 1233 0714 0833     		add	r3, r3, #8
+ 1234 0716 1B78     		ldrb	r3, [r3]
+ 1235 0718 181C     		mov	r0, r3
+ 1236 071a FFF7FEFF 		bl	i2cPutChar
+ 1237 071e 031C     		mov	r3, r0
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 33
+
+
+ 1238 0720 1B06     		lsl	r3, r3, #24
+ 1239 0722 1B0E     		lsr	r3, r3, #24
+ 1240 0724 3A1C     		mov	r2, r7
+ 1241 0726 0D32     		add	r2, r2, #13
+ 1242 0728 1370     		strb	r3, [r2]
+ 1243              	.L109:
+ 1244              		.loc 1 581 0
+ 1245 072a 3B1C     		mov	r3, r7
+ 1246 072c 0D33     		add	r3, r3, #13
+ 1247 072e 1B78     		ldrb	r3, [r3, #0]
+ 1248 0730 1B06     		lsl	r3, r3, #24
+ 1249 0732 1B16     		asr	r3, r3, #24
+ 1250 0734 0433     		add	r3, r3, #4
+ 1251 0736 ECD0     		beq	.L110
+ 1252              	.L107:
+ 584:i2c.c         ****     }
+ 585:i2c.c         ****   }
+ 586:i2c.c         **** 
+ 587:i2c.c         ****   if(retCode == I2C_CODE_OK )
+ 1253              		.loc 1 587 0
+ 1254 0738 3B1C     		mov	r3, r7
+ 1255 073a 0D33     		add	r3, r3, #13
+ 1256 073c 1B78     		ldrb	r3, [r3, #0]
+ 1257 073e 1B06     		lsl	r3, r3, #24
+ 1258 0740 1B16     		asr	r3, r3, #24
+ 1259 0742 012B     		cmp	r3, #1
+ 1260 0744 00D0     		beq	.LCB1215
+ 1261 0746 7CE0     		b	.L111	@long jump
+ 1262              	.LCB1215:
+ 588:i2c.c         ****   {
+ 589:i2c.c         ****     /* wait until address transmitted and receive data */
+ 590:i2c.c         ****     for(i = 1; i <= len; i++ )
+ 1263              		.loc 1 590 0
+ 1264 0748 3B1C     		mov	r3, r7
+ 1265 074a 0F33     		add	r3, r3, #15
+ 1266 074c 0122     		mov	r2, #1
+ 1267 074e 1A70     		strb	r2, [r3]
+ 1268 0750 70E0     		b	.L113
+ 1269              	.L114:
+ 591:i2c.c         ****     {
+ 592:i2c.c         ****       /* wait until data transmitted */
+ 593:i2c.c         ****       while(1)
+ 594:i2c.c         ****       {
+ 595:i2c.c         ****         /* get new status */
+ 596:i2c.c         ****         status = i2cCheckStatus();
+ 1270              		.loc 1 596 0
+ 1271 0752 FFF7FEFF 		bl	i2cCheckStatus
+ 1272 0756 031C     		mov	r3, r0
+ 1273 0758 3A1C     		mov	r2, r7
+ 1274 075a 0E32     		add	r2, r2, #14
+ 1275 075c 1370     		strb	r3, [r2]
+ 597:i2c.c         **** 
+ 598:i2c.c         ****         /*
+ 599:i2c.c         ****          * SLA+R transmitted, ACK received or
+ 600:i2c.c         ****          * SLA+R transmitted, ACK not received
+ 601:i2c.c         ****          * data byte received in master mode, ACK transmitted
+ 602:i2c.c         ****          */
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 34
+
+
+ 603:i2c.c         ****         if((status == 0x40 ) || (status == 0x48 ) || (status == 0x50 ))
+ 1276              		.loc 1 603 0
+ 1277 075e 3B1C     		mov	r3, r7
+ 1278 0760 0E33     		add	r3, r3, #14
+ 1279 0762 1B78     		ldrb	r3, [r3]
+ 1280 0764 402B     		cmp	r3, #64
+ 1281 0766 09D0     		beq	.L115
+ 1282 0768 3B1C     		mov	r3, r7
+ 1283 076a 0E33     		add	r3, r3, #14
+ 1284 076c 1B78     		ldrb	r3, [r3]
+ 1285 076e 482B     		cmp	r3, #72
+ 1286 0770 04D0     		beq	.L115
+ 1287 0772 3B1C     		mov	r3, r7
+ 1288 0774 0E33     		add	r3, r3, #14
+ 1289 0776 1B78     		ldrb	r3, [r3]
+ 1290 0778 502B     		cmp	r3, #80
+ 1291 077a 45D1     		bne	.L118
+ 1292              	.L115:
+ 604:i2c.c         ****         {
+ 605:i2c.c         ****           /* data received */
+ 606:i2c.c         **** 
+ 607:i2c.c         ****           if(i == len)
+ 1293              		.loc 1 607 0
+ 1294 077c 3B1C     		mov	r3, r7
+ 1295 077e 0F33     		add	r3, r3, #15
+ 1296 0780 1A78     		ldrb	r2, [r3]
+ 1297 0782 3B1C     		mov	r3, r7
+ 1298 0784 1B88     		ldrh	r3, [r3]
+ 1299 0786 9342     		cmp	r3, r2
+ 1300 0788 0CD1     		bne	.L119
+ 608:i2c.c         ****           {
+ 609:i2c.c         ****             /* Set generate NACK */
+ 610:i2c.c         ****             retCode = i2cGetChar(I2C_MODE_ACK1, pBuf);
+ 1301              		.loc 1 610 0
+ 1302 078a 3B1D     		add	r3, r7, #4
+ 1303 078c 1B68     		ldr	r3, [r3]
+ 1304 078e 0120     		mov	r0, #1
+ 1305 0790 191C     		mov	r1, r3
+ 1306 0792 FFF7FEFF 		bl	i2cGetChar
+ 1307 0796 031C     		mov	r3, r0
+ 1308 0798 1B06     		lsl	r3, r3, #24
+ 1309 079a 1B0E     		lsr	r3, r3, #24
+ 1310 079c 3A1C     		mov	r2, r7
+ 1311 079e 0D32     		add	r2, r2, #13
+ 1312 07a0 1370     		strb	r3, [r2]
+ 1313 07a2 0BE0     		b	.L121
+ 1314              	.L119:
+ 611:i2c.c         ****           }
+ 612:i2c.c         ****           else
+ 613:i2c.c         ****           {
+ 614:i2c.c         ****             retCode = i2cGetChar(I2C_MODE_ACK0, pBuf);
+ 1315              		.loc 1 614 0
+ 1316 07a4 3B1D     		add	r3, r7, #4
+ 1317 07a6 1B68     		ldr	r3, [r3]
+ 1318 07a8 0020     		mov	r0, #0
+ 1319 07aa 191C     		mov	r1, r3
+ 1320 07ac FFF7FEFF 		bl	i2cGetChar
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 35
+
+
+ 1321 07b0 031C     		mov	r3, r0
+ 1322 07b2 1B06     		lsl	r3, r3, #24
+ 1323 07b4 1B0E     		lsr	r3, r3, #24
+ 1324 07b6 3A1C     		mov	r2, r7
+ 1325 07b8 0D32     		add	r2, r2, #13
+ 1326 07ba 1370     		strb	r3, [r2]
+ 1327              	.L121:
+ 615:i2c.c         ****           }
+ 616:i2c.c         **** 
+ 617:i2c.c         ****           /* Read data */
+ 618:i2c.c         ****           retCode = i2cGetChar(I2C_MODE_READ, pBuf);
+ 1328              		.loc 1 618 0
+ 1329 07bc 3B1D     		add	r3, r7, #4
+ 1330 07be 1B68     		ldr	r3, [r3]
+ 1331 07c0 0220     		mov	r0, #2
+ 1332 07c2 191C     		mov	r1, r3
+ 1333 07c4 FFF7FEFF 		bl	i2cGetChar
+ 1334 07c8 031C     		mov	r3, r0
+ 1335 07ca 1B06     		lsl	r3, r3, #24
+ 1336 07cc 1B0E     		lsr	r3, r3, #24
+ 1337 07ce 3A1C     		mov	r2, r7
+ 1338 07d0 0D32     		add	r2, r2, #13
+ 1339 07d2 1370     		strb	r3, [r2]
+ 619:i2c.c         ****           while(retCode == I2C_CODE_EMPTY)
+ 1340              		.loc 1 619 0
+ 1341 07d4 0BE0     		b	.L122
+ 1342              	.L123:
+ 620:i2c.c         ****           {
+ 621:i2c.c         ****             retCode = i2cGetChar(I2C_MODE_READ, pBuf);
+ 1343              		.loc 1 621 0
+ 1344 07d6 3B1D     		add	r3, r7, #4
+ 1345 07d8 1B68     		ldr	r3, [r3]
+ 1346 07da 0220     		mov	r0, #2
+ 1347 07dc 191C     		mov	r1, r3
+ 1348 07de FFF7FEFF 		bl	i2cGetChar
+ 1349 07e2 031C     		mov	r3, r0
+ 1350 07e4 1B06     		lsl	r3, r3, #24
+ 1351 07e6 1B0E     		lsr	r3, r3, #24
+ 1352 07e8 3A1C     		mov	r2, r7
+ 1353 07ea 0D32     		add	r2, r2, #13
+ 1354 07ec 1370     		strb	r3, [r2]
+ 1355              	.L122:
+ 1356              		.loc 1 619 0
+ 1357 07ee 3B1C     		mov	r3, r7
+ 1358 07f0 0D33     		add	r3, r3, #13
+ 1359 07f2 1B78     		ldrb	r3, [r3, #0]
+ 1360 07f4 1B06     		lsl	r3, r3, #24
+ 1361 07f6 1B16     		asr	r3, r3, #24
+ 1362 07f8 0333     		add	r3, r3, #3
+ 1363 07fa ECD0     		beq	.L123
+ 622:i2c.c         ****           }
+ 623:i2c.c         ****           pBuf++;
+ 1364              		.loc 1 623 0
+ 1365 07fc 3A1D     		add	r2, r7, #4
+ 1366 07fe 3B1D     		add	r3, r7, #4
+ 1367 0800 1B68     		ldr	r3, [r3]
+ 1368 0802 0133     		add	r3, r3, #1
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 36
+
+
+ 1369 0804 1360     		str	r3, [r2]
+ 624:i2c.c         **** 
+ 625:i2c.c         ****           break;
+ 1370              		.loc 1 625 0
+ 1371 0806 0EE0     		b	.L125
+ 1372              	.L118:
+ 626:i2c.c         ****         }
+ 627:i2c.c         **** 
+ 628:i2c.c         ****         /* no relevant status information */
+ 629:i2c.c         ****         else if(status != 0xf8 )
+ 1373              		.loc 1 629 0
+ 1374 0808 3B1C     		mov	r3, r7
+ 1375 080a 0E33     		add	r3, r3, #14
+ 1376 080c 1B78     		ldrb	r3, [r3]
+ 1377 080e F82B     		cmp	r3, #248
+ 1378 0810 9FD0     		beq	.L114
+ 630:i2c.c         ****         {
+ 631:i2c.c         ****           /* error */
+ 632:i2c.c         ****           i = len;
+ 1379              		.loc 1 632 0
+ 1380 0812 3A1C     		mov	r2, r7
+ 1381 0814 0F32     		add	r2, r2, #15
+ 1382 0816 3B1C     		mov	r3, r7
+ 1383 0818 1B88     		ldrh	r3, [r3]
+ 1384 081a 1370     		strb	r3, [r2]
+ 633:i2c.c         ****           retCode = I2C_CODE_ERROR;
+ 1385              		.loc 1 633 0
+ 1386 081c 3A1C     		mov	r2, r7
+ 1387 081e 0D32     		add	r2, r2, #13
+ 1388 0820 0123     		mov	r3, #1
+ 1389 0822 5B42     		neg	r3, r3
+ 1390 0824 1370     		strb	r3, [r2]
+ 1391              	.L125:
+ 1392              		.loc 1 590 0
+ 1393 0826 3A1C     		mov	r2, r7
+ 1394 0828 0F32     		add	r2, r2, #15
+ 1395 082a 3B1C     		mov	r3, r7
+ 1396 082c 0F33     		add	r3, r3, #15
+ 1397 082e 1B78     		ldrb	r3, [r3]
+ 1398 0830 0133     		add	r3, r3, #1
+ 1399 0832 1370     		strb	r3, [r2]
+ 1400              	.L113:
+ 1401 0834 3B1C     		mov	r3, r7
+ 1402 0836 0F33     		add	r3, r3, #15
+ 1403 0838 1A78     		ldrb	r2, [r3]
+ 1404 083a 3B1C     		mov	r3, r7
+ 1405 083c 1B88     		ldrh	r3, [r3]
+ 1406 083e 9342     		cmp	r3, r2
+ 1407 0840 87D2     		bcs	.L114
+ 1408              	.L111:
+ 634:i2c.c         ****           break;
+ 635:i2c.c         ****         }
+ 636:i2c.c         ****       }
+ 637:i2c.c         ****     }
+ 638:i2c.c         ****   }
+ 639:i2c.c         **** 
+ 640:i2c.c         ****   /*--- Generate Stop condition ---*/
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 37
+
+
+ 641:i2c.c         ****   i2cStop();
+ 1409              		.loc 1 641 0
+ 1410 0842 FFF7FEFF 		bl	i2cStop
+ 642:i2c.c         **** 
+ 643:i2c.c         ****   return retCode;
+ 1411              		.loc 1 643 0
+ 1412 0846 3B1C     		mov	r3, r7
+ 1413 0848 0D33     		add	r3, r3, #13
+ 1414 084a 1B78     		ldrb	r3, [r3, #0]
+ 1415 084c 1B06     		lsl	r3, r3, #24
+ 1416 084e 1B16     		asr	r3, r3, #24
+ 644:i2c.c         **** }
+ 1417              		.loc 1 644 0
+ 1418 0850 181C     		mov	r0, r3
+ 1419 0852 BD46     		mov	sp, r7
+ 1420 0854 04B0     		add	sp, sp, #16
+ 1421              		@ sp needed for prologue
+ 1422 0856 80BC     		pop	{r7}
+ 1423 0858 02BC     		pop	{r1}
+ 1424 085a 0847     		bx	r1
+ 1425              	.LFE13:
+ 1426              		.size	i2cRead, .-i2cRead
+ 1427              		.section	.debug_frame,"",%progbits
+ 1428              	.Lframe0:
+ 1429 0000 0C000000 		.4byte	.LECIE0-.LSCIE0
+ 1430              	.LSCIE0:
+ 1431 0004 FFFFFFFF 		.4byte	0xffffffff
+ 1432 0008 01       		.byte	0x1
+ 1433 0009 00       		.ascii	"\000"
+ 1434 000a 01       		.uleb128 0x1
+ 1435 000b 7C       		.sleb128 -4
+ 1436 000c 0E       		.byte	0xe
+ 1437 000d 0C       		.byte	0xc
+ 1438 000e 0D       		.uleb128 0xd
+ 1439 000f 00       		.uleb128 0x0
+ 1440              		.align	2
+ 1441              	.LECIE0:
+ 1442              	.LSFDE0:
+ 1443 0010 1C000000 		.4byte	.LEFDE0-.LASFDE0
+ 1444              	.LASFDE0:
+ 1445 0014 00000000 		.4byte	.Lframe0
+ 1446 0018 00000000 		.4byte	.LFB2
+ 1447 001c 40000000 		.4byte	.LFE2-.LFB2
+ 1448 0020 42       		.byte	0x4
+ 1449              		.4byte	.LCFI0-.LFB2
+ 1450 0021 0E       		.byte	0xe
+ 1451 0022 08       		.uleb128 0x8
+ 1452 0023 87       		.byte	0x87
+ 1453 0024 02       		.uleb128 0x2
+ 1454 0025 8E       		.byte	0x8e
+ 1455 0026 01       		.uleb128 0x1
+ 1456 0027 42       		.byte	0x4
+ 1457              		.4byte	.LCFI1-.LCFI0
+ 1458 0028 0E       		.byte	0xe
+ 1459 0029 0C       		.uleb128 0xc
+ 1460 002a 42       		.byte	0x4
+ 1461              		.4byte	.LCFI2-.LCFI1
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 38
+
+
+ 1462 002b 0D       		.byte	0xd
+ 1463 002c 07       		.uleb128 0x7
+ 1464 002d 000000   		.align	2
+ 1465              	.LEFDE0:
+ 1466              	.LSFDE2:
+ 1467 0030 18000000 		.4byte	.LEFDE2-.LASFDE2
+ 1468              	.LASFDE2:
+ 1469 0034 00000000 		.4byte	.Lframe0
+ 1470 0038 40000000 		.4byte	.LFB3
+ 1471 003c B4000000 		.4byte	.LFE3-.LFB3
+ 1472 0040 42       		.byte	0x4
+ 1473              		.4byte	.LCFI3-.LFB3
+ 1474 0041 0E       		.byte	0xe
+ 1475 0042 08       		.uleb128 0x8
+ 1476 0043 87       		.byte	0x87
+ 1477 0044 02       		.uleb128 0x2
+ 1478 0045 8E       		.byte	0x8e
+ 1479 0046 01       		.uleb128 0x1
+ 1480 0047 42       		.byte	0x4
+ 1481              		.4byte	.LCFI4-.LCFI3
+ 1482 0048 0C       		.byte	0xc
+ 1483 0049 07       		.uleb128 0x7
+ 1484 004a 00       		.uleb128 0x0
+ 1485 004b 00       		.align	2
+ 1486              	.LEFDE2:
+ 1487              	.LSFDE4:
+ 1488 004c 1C000000 		.4byte	.LEFDE4-.LASFDE4
+ 1489              	.LASFDE4:
+ 1490 0050 00000000 		.4byte	.Lframe0
+ 1491 0054 F4000000 		.4byte	.LFB4
+ 1492 0058 84000000 		.4byte	.LFE4-.LFB4
+ 1493 005c 42       		.byte	0x4
+ 1494              		.4byte	.LCFI5-.LFB4
+ 1495 005d 0E       		.byte	0xe
+ 1496 005e 08       		.uleb128 0x8
+ 1497 005f 87       		.byte	0x87
+ 1498 0060 02       		.uleb128 0x2
+ 1499 0061 8E       		.byte	0x8e
+ 1500 0062 01       		.uleb128 0x1
+ 1501 0063 42       		.byte	0x4
+ 1502              		.4byte	.LCFI6-.LCFI5
+ 1503 0064 0E       		.byte	0xe
+ 1504 0065 0C       		.uleb128 0xc
+ 1505 0066 42       		.byte	0x4
+ 1506              		.4byte	.LCFI7-.LCFI6
+ 1507 0067 0D       		.byte	0xd
+ 1508 0068 07       		.uleb128 0x7
+ 1509 0069 000000   		.align	2
+ 1510              	.LEFDE4:
+ 1511              	.LSFDE6:
+ 1512 006c 1C000000 		.4byte	.LEFDE6-.LASFDE6
+ 1513              	.LASFDE6:
+ 1514 0070 00000000 		.4byte	.Lframe0
+ 1515 0074 78010000 		.4byte	.LFB5
+ 1516 0078 8C000000 		.4byte	.LFE5-.LFB5
+ 1517 007c 42       		.byte	0x4
+ 1518              		.4byte	.LCFI8-.LFB5
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 39
+
+
+ 1519 007d 0E       		.byte	0xe
+ 1520 007e 08       		.uleb128 0x8
+ 1521 007f 87       		.byte	0x87
+ 1522 0080 02       		.uleb128 0x2
+ 1523 0081 8E       		.byte	0x8e
+ 1524 0082 01       		.uleb128 0x1
+ 1525 0083 42       		.byte	0x4
+ 1526              		.4byte	.LCFI9-.LCFI8
+ 1527 0084 0E       		.byte	0xe
+ 1528 0085 0C       		.uleb128 0xc
+ 1529 0086 42       		.byte	0x4
+ 1530              		.4byte	.LCFI10-.LCFI9
+ 1531 0087 0D       		.byte	0xd
+ 1532 0088 07       		.uleb128 0x7
+ 1533 0089 000000   		.align	2
+ 1534              	.LEFDE6:
+ 1535              	.LSFDE8:
+ 1536 008c 18000000 		.4byte	.LEFDE8-.LASFDE8
+ 1537              	.LASFDE8:
+ 1538 0090 00000000 		.4byte	.Lframe0
+ 1539 0094 04020000 		.4byte	.LFB6
+ 1540 0098 48000000 		.4byte	.LFE6-.LFB6
+ 1541 009c 42       		.byte	0x4
+ 1542              		.4byte	.LCFI11-.LFB6
+ 1543 009d 0E       		.byte	0xe
+ 1544 009e 08       		.uleb128 0x8
+ 1545 009f 87       		.byte	0x87
+ 1546 00a0 02       		.uleb128 0x2
+ 1547 00a1 8E       		.byte	0x8e
+ 1548 00a2 01       		.uleb128 0x1
+ 1549 00a3 42       		.byte	0x4
+ 1550              		.4byte	.LCFI12-.LCFI11
+ 1551 00a4 0C       		.byte	0xc
+ 1552 00a5 07       		.uleb128 0x7
+ 1553 00a6 00       		.uleb128 0x0
+ 1554 00a7 00       		.align	2
+ 1555              	.LEFDE8:
+ 1556              	.LSFDE10:
+ 1557 00a8 1C000000 		.4byte	.LEFDE10-.LASFDE10
+ 1558              	.LASFDE10:
+ 1559 00ac 00000000 		.4byte	.Lframe0
+ 1560 00b0 4C020000 		.4byte	.LFB7
+ 1561 00b4 64000000 		.4byte	.LFE7-.LFB7
+ 1562 00b8 42       		.byte	0x4
+ 1563              		.4byte	.LCFI13-.LFB7
+ 1564 00b9 0E       		.byte	0xe
+ 1565 00ba 08       		.uleb128 0x8
+ 1566 00bb 87       		.byte	0x87
+ 1567 00bc 02       		.uleb128 0x2
+ 1568 00bd 8E       		.byte	0x8e
+ 1569 00be 01       		.uleb128 0x1
+ 1570 00bf 42       		.byte	0x4
+ 1571              		.4byte	.LCFI14-.LCFI13
+ 1572 00c0 0E       		.byte	0xe
+ 1573 00c1 10       		.uleb128 0x10
+ 1574 00c2 42       		.byte	0x4
+ 1575              		.4byte	.LCFI15-.LCFI14
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 40
+
+
+ 1576 00c3 0D       		.byte	0xd
+ 1577 00c4 07       		.uleb128 0x7
+ 1578 00c5 000000   		.align	2
+ 1579              	.LEFDE10:
+ 1580              	.LSFDE12:
+ 1581 00c8 1C000000 		.4byte	.LEFDE12-.LASFDE12
+ 1582              	.LASFDE12:
+ 1583 00cc 00000000 		.4byte	.Lframe0
+ 1584 00d0 B0020000 		.4byte	.LFB8
+ 1585 00d4 AC000000 		.4byte	.LFE8-.LFB8
+ 1586 00d8 42       		.byte	0x4
+ 1587              		.4byte	.LCFI16-.LFB8
+ 1588 00d9 0E       		.byte	0xe
+ 1589 00da 08       		.uleb128 0x8
+ 1590 00db 87       		.byte	0x87
+ 1591 00dc 02       		.uleb128 0x2
+ 1592 00dd 8E       		.byte	0x8e
+ 1593 00de 01       		.uleb128 0x1
+ 1594 00df 42       		.byte	0x4
+ 1595              		.4byte	.LCFI17-.LCFI16
+ 1596 00e0 0E       		.byte	0xe
+ 1597 00e1 14       		.uleb128 0x14
+ 1598 00e2 42       		.byte	0x4
+ 1599              		.4byte	.LCFI18-.LCFI17
+ 1600 00e3 0D       		.byte	0xd
+ 1601 00e4 07       		.uleb128 0x7
+ 1602 00e5 000000   		.align	2
+ 1603              	.LEFDE12:
+ 1604              	.LSFDE14:
+ 1605 00e8 1C000000 		.4byte	.LEFDE14-.LASFDE14
+ 1606              	.LASFDE14:
+ 1607 00ec 00000000 		.4byte	.Lframe0
+ 1608 00f0 5C030000 		.4byte	.LFB9
+ 1609 00f4 A6010000 		.4byte	.LFE9-.LFB9
+ 1610 00f8 42       		.byte	0x4
+ 1611              		.4byte	.LCFI19-.LFB9
+ 1612 00f9 0E       		.byte	0xe
+ 1613 00fa 08       		.uleb128 0x8
+ 1614 00fb 87       		.byte	0x87
+ 1615 00fc 02       		.uleb128 0x2
+ 1616 00fd 8E       		.byte	0x8e
+ 1617 00fe 01       		.uleb128 0x1
+ 1618 00ff 42       		.byte	0x4
+ 1619              		.4byte	.LCFI20-.LCFI19
+ 1620 0100 0E       		.byte	0xe
+ 1621 0101 18       		.uleb128 0x18
+ 1622 0102 42       		.byte	0x4
+ 1623              		.4byte	.LCFI21-.LCFI20
+ 1624 0103 0D       		.byte	0xd
+ 1625 0104 07       		.uleb128 0x7
+ 1626 0105 000000   		.align	2
+ 1627              	.LEFDE14:
+ 1628              	.LSFDE16:
+ 1629 0108 1C000000 		.4byte	.LEFDE16-.LASFDE16
+ 1630              	.LASFDE16:
+ 1631 010c 00000000 		.4byte	.Lframe0
+ 1632 0110 04050000 		.4byte	.LFB10
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 41
+
+
+ 1633 0114 4C000000 		.4byte	.LFE10-.LFB10
+ 1634 0118 42       		.byte	0x4
+ 1635              		.4byte	.LCFI22-.LFB10
+ 1636 0119 0E       		.byte	0xe
+ 1637 011a 08       		.uleb128 0x8
+ 1638 011b 87       		.byte	0x87
+ 1639 011c 02       		.uleb128 0x2
+ 1640 011d 8E       		.byte	0x8e
+ 1641 011e 01       		.uleb128 0x1
+ 1642 011f 42       		.byte	0x4
+ 1643              		.4byte	.LCFI23-.LCFI22
+ 1644 0120 0E       		.byte	0xe
+ 1645 0121 10       		.uleb128 0x10
+ 1646 0122 42       		.byte	0x4
+ 1647              		.4byte	.LCFI24-.LCFI23
+ 1648 0123 0D       		.byte	0xd
+ 1649 0124 07       		.uleb128 0x7
+ 1650 0125 000000   		.align	2
+ 1651              	.LEFDE16:
+ 1652              	.LSFDE18:
+ 1653 0128 1C000000 		.4byte	.LEFDE18-.LASFDE18
+ 1654              	.LASFDE18:
+ 1655 012c 00000000 		.4byte	.Lframe0
+ 1656 0130 50050000 		.4byte	.LFB11
+ 1657 0134 76000000 		.4byte	.LFE11-.LFB11
+ 1658 0138 42       		.byte	0x4
+ 1659              		.4byte	.LCFI25-.LFB11
+ 1660 0139 0E       		.byte	0xe
+ 1661 013a 08       		.uleb128 0x8
+ 1662 013b 87       		.byte	0x87
+ 1663 013c 02       		.uleb128 0x2
+ 1664 013d 8E       		.byte	0x8e
+ 1665 013e 01       		.uleb128 0x1
+ 1666 013f 42       		.byte	0x4
+ 1667              		.4byte	.LCFI26-.LCFI25
+ 1668 0140 0E       		.byte	0xe
+ 1669 0141 10       		.uleb128 0x10
+ 1670 0142 42       		.byte	0x4
+ 1671              		.4byte	.LCFI27-.LCFI26
+ 1672 0143 0D       		.byte	0xd
+ 1673 0144 07       		.uleb128 0x7
+ 1674 0145 000000   		.align	2
+ 1675              	.LEFDE18:
+ 1676              	.LSFDE20:
+ 1677 0148 1C000000 		.4byte	.LEFDE20-.LASFDE20
+ 1678              	.LASFDE20:
+ 1679 014c 00000000 		.4byte	.Lframe0
+ 1680 0150 C8050000 		.4byte	.LFB12
+ 1681 0154 DE000000 		.4byte	.LFE12-.LFB12
+ 1682 0158 42       		.byte	0x4
+ 1683              		.4byte	.LCFI28-.LFB12
+ 1684 0159 0E       		.byte	0xe
+ 1685 015a 08       		.uleb128 0x8
+ 1686 015b 87       		.byte	0x87
+ 1687 015c 02       		.uleb128 0x2
+ 1688 015d 8E       		.byte	0x8e
+ 1689 015e 01       		.uleb128 0x1
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 42
+
+
+ 1690 015f 42       		.byte	0x4
+ 1691              		.4byte	.LCFI29-.LCFI28
+ 1692 0160 0E       		.byte	0xe
+ 1693 0161 18       		.uleb128 0x18
+ 1694 0162 42       		.byte	0x4
+ 1695              		.4byte	.LCFI30-.LCFI29
+ 1696 0163 0D       		.byte	0xd
+ 1697 0164 07       		.uleb128 0x7
+ 1698 0165 000000   		.align	2
+ 1699              	.LEFDE20:
+ 1700              	.LSFDE22:
+ 1701 0168 1C000000 		.4byte	.LEFDE22-.LASFDE22
+ 1702              	.LASFDE22:
+ 1703 016c 00000000 		.4byte	.Lframe0
+ 1704 0170 A8060000 		.4byte	.LFB13
+ 1705 0174 B4010000 		.4byte	.LFE13-.LFB13
+ 1706 0178 42       		.byte	0x4
+ 1707              		.4byte	.LCFI31-.LFB13
+ 1708 0179 0E       		.byte	0xe
+ 1709 017a 08       		.uleb128 0x8
+ 1710 017b 87       		.byte	0x87
+ 1711 017c 02       		.uleb128 0x2
+ 1712 017d 8E       		.byte	0x8e
+ 1713 017e 01       		.uleb128 0x1
+ 1714 017f 42       		.byte	0x4
+ 1715              		.4byte	.LCFI32-.LCFI31
+ 1716 0180 0E       		.byte	0xe
+ 1717 0181 18       		.uleb128 0x18
+ 1718 0182 42       		.byte	0x4
+ 1719              		.4byte	.LCFI33-.LCFI32
+ 1720 0183 0D       		.byte	0xd
+ 1721 0184 07       		.uleb128 0x7
+ 1722 0185 000000   		.align	2
+ 1723              	.LEFDE22:
+ 1724              		.file 2 "general.h"
+ 1725              		.text
+ 1726              	.Letext0:
+ 1727              		.section	.debug_loc,"",%progbits
+ 1728              	.Ldebug_loc0:
+ 1729              	.LLST0:
+ 1730 0000 00000000 		.4byte	.LFB2-.Ltext0
+ 1731 0004 02000000 		.4byte	.LCFI0-.Ltext0
+ 1732 0008 0100     		.2byte	0x1
+ 1733 000a 5D       		.byte	0x5d
+ 1734 000b 02000000 		.4byte	.LCFI0-.Ltext0
+ 1735 000f 04000000 		.4byte	.LCFI1-.Ltext0
+ 1736 0013 0200     		.2byte	0x2
+ 1737 0015 7D       		.byte	0x7d
+ 1738 0016 08       		.sleb128 8
+ 1739 0017 04000000 		.4byte	.LCFI1-.Ltext0
+ 1740 001b 06000000 		.4byte	.LCFI2-.Ltext0
+ 1741 001f 0200     		.2byte	0x2
+ 1742 0021 7D       		.byte	0x7d
+ 1743 0022 0C       		.sleb128 12
+ 1744 0023 06000000 		.4byte	.LCFI2-.Ltext0
+ 1745 0027 40000000 		.4byte	.LFE2-.Ltext0
+ 1746 002b 0200     		.2byte	0x2
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 43
+
+
+ 1747 002d 77       		.byte	0x77
+ 1748 002e 0C       		.sleb128 12
+ 1749 002f 00000000 		.4byte	0x0
+ 1750 0033 00000000 		.4byte	0x0
+ 1751              	.LLST1:
+ 1752 0037 40000000 		.4byte	.LFB3-.Ltext0
+ 1753 003b 42000000 		.4byte	.LCFI3-.Ltext0
+ 1754 003f 0100     		.2byte	0x1
+ 1755 0041 5D       		.byte	0x5d
+ 1756 0042 42000000 		.4byte	.LCFI3-.Ltext0
+ 1757 0046 44000000 		.4byte	.LCFI4-.Ltext0
+ 1758 004a 0200     		.2byte	0x2
+ 1759 004c 7D       		.byte	0x7d
+ 1760 004d 08       		.sleb128 8
+ 1761 004e 44000000 		.4byte	.LCFI4-.Ltext0
+ 1762 0052 F4000000 		.4byte	.LFE3-.Ltext0
+ 1763 0056 0100     		.2byte	0x1
+ 1764 0058 57       		.byte	0x57
+ 1765 0059 00000000 		.4byte	0x0
+ 1766 005d 00000000 		.4byte	0x0
+ 1767              	.LLST2:
+ 1768 0061 F4000000 		.4byte	.LFB4-.Ltext0
+ 1769 0065 F6000000 		.4byte	.LCFI5-.Ltext0
+ 1770 0069 0100     		.2byte	0x1
+ 1771 006b 5D       		.byte	0x5d
+ 1772 006c F6000000 		.4byte	.LCFI5-.Ltext0
+ 1773 0070 F8000000 		.4byte	.LCFI6-.Ltext0
+ 1774 0074 0200     		.2byte	0x2
+ 1775 0076 7D       		.byte	0x7d
+ 1776 0077 08       		.sleb128 8
+ 1777 0078 F8000000 		.4byte	.LCFI6-.Ltext0
+ 1778 007c FA000000 		.4byte	.LCFI7-.Ltext0
+ 1779 0080 0200     		.2byte	0x2
+ 1780 0082 7D       		.byte	0x7d
+ 1781 0083 0C       		.sleb128 12
+ 1782 0084 FA000000 		.4byte	.LCFI7-.Ltext0
+ 1783 0088 78010000 		.4byte	.LFE4-.Ltext0
+ 1784 008c 0200     		.2byte	0x2
+ 1785 008e 77       		.byte	0x77
+ 1786 008f 0C       		.sleb128 12
+ 1787 0090 00000000 		.4byte	0x0
+ 1788 0094 00000000 		.4byte	0x0
+ 1789              	.LLST3:
+ 1790 0098 78010000 		.4byte	.LFB5-.Ltext0
+ 1791 009c 7A010000 		.4byte	.LCFI8-.Ltext0
+ 1792 00a0 0100     		.2byte	0x1
+ 1793 00a2 5D       		.byte	0x5d
+ 1794 00a3 7A010000 		.4byte	.LCFI8-.Ltext0
+ 1795 00a7 7C010000 		.4byte	.LCFI9-.Ltext0
+ 1796 00ab 0200     		.2byte	0x2
+ 1797 00ad 7D       		.byte	0x7d
+ 1798 00ae 08       		.sleb128 8
+ 1799 00af 7C010000 		.4byte	.LCFI9-.Ltext0
+ 1800 00b3 7E010000 		.4byte	.LCFI10-.Ltext0
+ 1801 00b7 0200     		.2byte	0x2
+ 1802 00b9 7D       		.byte	0x7d
+ 1803 00ba 0C       		.sleb128 12
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 44
+
+
+ 1804 00bb 7E010000 		.4byte	.LCFI10-.Ltext0
+ 1805 00bf 04020000 		.4byte	.LFE5-.Ltext0
+ 1806 00c3 0200     		.2byte	0x2
+ 1807 00c5 77       		.byte	0x77
+ 1808 00c6 0C       		.sleb128 12
+ 1809 00c7 00000000 		.4byte	0x0
+ 1810 00cb 00000000 		.4byte	0x0
+ 1811              	.LLST4:
+ 1812 00cf 04020000 		.4byte	.LFB6-.Ltext0
+ 1813 00d3 06020000 		.4byte	.LCFI11-.Ltext0
+ 1814 00d7 0100     		.2byte	0x1
+ 1815 00d9 5D       		.byte	0x5d
+ 1816 00da 06020000 		.4byte	.LCFI11-.Ltext0
+ 1817 00de 08020000 		.4byte	.LCFI12-.Ltext0
+ 1818 00e2 0200     		.2byte	0x2
+ 1819 00e4 7D       		.byte	0x7d
+ 1820 00e5 08       		.sleb128 8
+ 1821 00e6 08020000 		.4byte	.LCFI12-.Ltext0
+ 1822 00ea 4C020000 		.4byte	.LFE6-.Ltext0
+ 1823 00ee 0100     		.2byte	0x1
+ 1824 00f0 57       		.byte	0x57
+ 1825 00f1 00000000 		.4byte	0x0
+ 1826 00f5 00000000 		.4byte	0x0
+ 1827              	.LLST5:
+ 1828 00f9 4C020000 		.4byte	.LFB7-.Ltext0
+ 1829 00fd 4E020000 		.4byte	.LCFI13-.Ltext0
+ 1830 0101 0100     		.2byte	0x1
+ 1831 0103 5D       		.byte	0x5d
+ 1832 0104 4E020000 		.4byte	.LCFI13-.Ltext0
+ 1833 0108 50020000 		.4byte	.LCFI14-.Ltext0
+ 1834 010c 0200     		.2byte	0x2
+ 1835 010e 7D       		.byte	0x7d
+ 1836 010f 08       		.sleb128 8
+ 1837 0110 50020000 		.4byte	.LCFI14-.Ltext0
+ 1838 0114 52020000 		.4byte	.LCFI15-.Ltext0
+ 1839 0118 0200     		.2byte	0x2
+ 1840 011a 7D       		.byte	0x7d
+ 1841 011b 10       		.sleb128 16
+ 1842 011c 52020000 		.4byte	.LCFI15-.Ltext0
+ 1843 0120 B0020000 		.4byte	.LFE7-.Ltext0
+ 1844 0124 0200     		.2byte	0x2
+ 1845 0126 77       		.byte	0x77
+ 1846 0127 10       		.sleb128 16
+ 1847 0128 00000000 		.4byte	0x0
+ 1848 012c 00000000 		.4byte	0x0
+ 1849              	.LLST6:
+ 1850 0130 B0020000 		.4byte	.LFB8-.Ltext0
+ 1851 0134 B2020000 		.4byte	.LCFI16-.Ltext0
+ 1852 0138 0100     		.2byte	0x1
+ 1853 013a 5D       		.byte	0x5d
+ 1854 013b B2020000 		.4byte	.LCFI16-.Ltext0
+ 1855 013f B4020000 		.4byte	.LCFI17-.Ltext0
+ 1856 0143 0200     		.2byte	0x2
+ 1857 0145 7D       		.byte	0x7d
+ 1858 0146 08       		.sleb128 8
+ 1859 0147 B4020000 		.4byte	.LCFI17-.Ltext0
+ 1860 014b B6020000 		.4byte	.LCFI18-.Ltext0
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 45
+
+
+ 1861 014f 0200     		.2byte	0x2
+ 1862 0151 7D       		.byte	0x7d
+ 1863 0152 14       		.sleb128 20
+ 1864 0153 B6020000 		.4byte	.LCFI18-.Ltext0
+ 1865 0157 5C030000 		.4byte	.LFE8-.Ltext0
+ 1866 015b 0200     		.2byte	0x2
+ 1867 015d 77       		.byte	0x77
+ 1868 015e 14       		.sleb128 20
+ 1869 015f 00000000 		.4byte	0x0
+ 1870 0163 00000000 		.4byte	0x0
+ 1871              	.LLST7:
+ 1872 0167 5C030000 		.4byte	.LFB9-.Ltext0
+ 1873 016b 5E030000 		.4byte	.LCFI19-.Ltext0
+ 1874 016f 0100     		.2byte	0x1
+ 1875 0171 5D       		.byte	0x5d
+ 1876 0172 5E030000 		.4byte	.LCFI19-.Ltext0
+ 1877 0176 60030000 		.4byte	.LCFI20-.Ltext0
+ 1878 017a 0200     		.2byte	0x2
+ 1879 017c 7D       		.byte	0x7d
+ 1880 017d 08       		.sleb128 8
+ 1881 017e 60030000 		.4byte	.LCFI20-.Ltext0
+ 1882 0182 62030000 		.4byte	.LCFI21-.Ltext0
+ 1883 0186 0200     		.2byte	0x2
+ 1884 0188 7D       		.byte	0x7d
+ 1885 0189 18       		.sleb128 24
+ 1886 018a 62030000 		.4byte	.LCFI21-.Ltext0
+ 1887 018e 02050000 		.4byte	.LFE9-.Ltext0
+ 1888 0192 0200     		.2byte	0x2
+ 1889 0194 77       		.byte	0x77
+ 1890 0195 18       		.sleb128 24
+ 1891 0196 00000000 		.4byte	0x0
+ 1892 019a 00000000 		.4byte	0x0
+ 1893              	.LLST8:
+ 1894 019e 04050000 		.4byte	.LFB10-.Ltext0
+ 1895 01a2 06050000 		.4byte	.LCFI22-.Ltext0
+ 1896 01a6 0100     		.2byte	0x1
+ 1897 01a8 5D       		.byte	0x5d
+ 1898 01a9 06050000 		.4byte	.LCFI22-.Ltext0
+ 1899 01ad 08050000 		.4byte	.LCFI23-.Ltext0
+ 1900 01b1 0200     		.2byte	0x2
+ 1901 01b3 7D       		.byte	0x7d
+ 1902 01b4 08       		.sleb128 8
+ 1903 01b5 08050000 		.4byte	.LCFI23-.Ltext0
+ 1904 01b9 0A050000 		.4byte	.LCFI24-.Ltext0
+ 1905 01bd 0200     		.2byte	0x2
+ 1906 01bf 7D       		.byte	0x7d
+ 1907 01c0 10       		.sleb128 16
+ 1908 01c1 0A050000 		.4byte	.LCFI24-.Ltext0
+ 1909 01c5 50050000 		.4byte	.LFE10-.Ltext0
+ 1910 01c9 0200     		.2byte	0x2
+ 1911 01cb 77       		.byte	0x77
+ 1912 01cc 10       		.sleb128 16
+ 1913 01cd 00000000 		.4byte	0x0
+ 1914 01d1 00000000 		.4byte	0x0
+ 1915              	.LLST9:
+ 1916 01d5 50050000 		.4byte	.LFB11-.Ltext0
+ 1917 01d9 52050000 		.4byte	.LCFI25-.Ltext0
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 46
+
+
+ 1918 01dd 0100     		.2byte	0x1
+ 1919 01df 5D       		.byte	0x5d
+ 1920 01e0 52050000 		.4byte	.LCFI25-.Ltext0
+ 1921 01e4 54050000 		.4byte	.LCFI26-.Ltext0
+ 1922 01e8 0200     		.2byte	0x2
+ 1923 01ea 7D       		.byte	0x7d
+ 1924 01eb 08       		.sleb128 8
+ 1925 01ec 54050000 		.4byte	.LCFI26-.Ltext0
+ 1926 01f0 56050000 		.4byte	.LCFI27-.Ltext0
+ 1927 01f4 0200     		.2byte	0x2
+ 1928 01f6 7D       		.byte	0x7d
+ 1929 01f7 10       		.sleb128 16
+ 1930 01f8 56050000 		.4byte	.LCFI27-.Ltext0
+ 1931 01fc C6050000 		.4byte	.LFE11-.Ltext0
+ 1932 0200 0200     		.2byte	0x2
+ 1933 0202 77       		.byte	0x77
+ 1934 0203 10       		.sleb128 16
+ 1935 0204 00000000 		.4byte	0x0
+ 1936 0208 00000000 		.4byte	0x0
+ 1937              	.LLST10:
+ 1938 020c C8050000 		.4byte	.LFB12-.Ltext0
+ 1939 0210 CA050000 		.4byte	.LCFI28-.Ltext0
+ 1940 0214 0100     		.2byte	0x1
+ 1941 0216 5D       		.byte	0x5d
+ 1942 0217 CA050000 		.4byte	.LCFI28-.Ltext0
+ 1943 021b CC050000 		.4byte	.LCFI29-.Ltext0
+ 1944 021f 0200     		.2byte	0x2
+ 1945 0221 7D       		.byte	0x7d
+ 1946 0222 08       		.sleb128 8
+ 1947 0223 CC050000 		.4byte	.LCFI29-.Ltext0
+ 1948 0227 CE050000 		.4byte	.LCFI30-.Ltext0
+ 1949 022b 0200     		.2byte	0x2
+ 1950 022d 7D       		.byte	0x7d
+ 1951 022e 18       		.sleb128 24
+ 1952 022f CE050000 		.4byte	.LCFI30-.Ltext0
+ 1953 0233 A6060000 		.4byte	.LFE12-.Ltext0
+ 1954 0237 0200     		.2byte	0x2
+ 1955 0239 77       		.byte	0x77
+ 1956 023a 18       		.sleb128 24
+ 1957 023b 00000000 		.4byte	0x0
+ 1958 023f 00000000 		.4byte	0x0
+ 1959              	.LLST11:
+ 1960 0243 A8060000 		.4byte	.LFB13-.Ltext0
+ 1961 0247 AA060000 		.4byte	.LCFI31-.Ltext0
+ 1962 024b 0100     		.2byte	0x1
+ 1963 024d 5D       		.byte	0x5d
+ 1964 024e AA060000 		.4byte	.LCFI31-.Ltext0
+ 1965 0252 AC060000 		.4byte	.LCFI32-.Ltext0
+ 1966 0256 0200     		.2byte	0x2
+ 1967 0258 7D       		.byte	0x7d
+ 1968 0259 08       		.sleb128 8
+ 1969 025a AC060000 		.4byte	.LCFI32-.Ltext0
+ 1970 025e AE060000 		.4byte	.LCFI33-.Ltext0
+ 1971 0262 0200     		.2byte	0x2
+ 1972 0264 7D       		.byte	0x7d
+ 1973 0265 18       		.sleb128 24
+ 1974 0266 AE060000 		.4byte	.LCFI33-.Ltext0
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 47
+
+
+ 1975 026a 5C080000 		.4byte	.LFE13-.Ltext0
+ 1976 026e 0200     		.2byte	0x2
+ 1977 0270 77       		.byte	0x77
+ 1978 0271 18       		.sleb128 24
+ 1979 0272 00000000 		.4byte	0x0
+ 1980 0276 00000000 		.4byte	0x0
+ 1981              		.section	.debug_info
+ 1982 0000 77040000 		.4byte	0x477
+ 1983 0004 0200     		.2byte	0x2
+ 1984 0006 00000000 		.4byte	.Ldebug_abbrev0
+ 1985 000a 04       		.byte	0x4
+ 1986 000b 01       		.uleb128 0x1
+ 1987 000c 00000000 		.4byte	.Ldebug_line0
+ 1988 0010 5C080000 		.4byte	.Letext0
+ 1989 0014 00000000 		.4byte	.Ltext0
+ 1990 0018 474E5520 		.ascii	"GNU C 4.1.1\000"
+ 1990      4320342E 
+ 1990      312E3100 
+ 1991 0024 01       		.byte	0x1
+ 1992 0025 6932632E 		.ascii	"i2c.c\000"
+ 1992      6300
+ 1993 002b 2F637967 		.ascii	"/cygdrive/c/Embedded/eclipse/Demo/2138\000"
+ 1993      64726976 
+ 1993      652F632F 
+ 1993      456D6265 
+ 1993      64646564 
+ 1994 0052 02       		.uleb128 0x2
+ 1995 0053 74553800 		.ascii	"tU8\000"
+ 1996 0057 02       		.byte	0x2
+ 1997 0058 16       		.byte	0x16
+ 1998 0059 5D000000 		.4byte	0x5d
+ 1999 005d 03       		.uleb128 0x3
+ 2000 005e 756E7369 		.ascii	"unsigned char\000"
+ 2000      676E6564 
+ 2000      20636861 
+ 2000      7200
+ 2001 006c 01       		.byte	0x1
+ 2002 006d 08       		.byte	0x8
+ 2003 006e 02       		.uleb128 0x2
+ 2004 006f 74553136 		.ascii	"tU16\000"
+ 2004      00
+ 2005 0074 02       		.byte	0x2
+ 2006 0075 17       		.byte	0x17
+ 2007 0076 7A000000 		.4byte	0x7a
+ 2008 007a 03       		.uleb128 0x3
+ 2009 007b 73686F72 		.ascii	"short unsigned int\000"
+ 2009      7420756E 
+ 2009      7369676E 
+ 2009      65642069 
+ 2009      6E7400
+ 2010 008e 02       		.byte	0x2
+ 2011 008f 07       		.byte	0x7
+ 2012 0090 03       		.uleb128 0x3
+ 2013 0091 756E7369 		.ascii	"unsigned int\000"
+ 2013      676E6564 
+ 2013      20696E74 
+ 2013      00
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 48
+
+
+ 2014 009e 04       		.byte	0x4
+ 2015 009f 07       		.byte	0x7
+ 2016 00a0 03       		.uleb128 0x3
+ 2017 00a1 6C6F6E67 		.ascii	"long long unsigned int\000"
+ 2017      206C6F6E 
+ 2017      6720756E 
+ 2017      7369676E 
+ 2017      65642069 
+ 2018 00b8 08       		.byte	0x8
+ 2019 00b9 07       		.byte	0x7
+ 2020 00ba 02       		.uleb128 0x2
+ 2021 00bb 74533800 		.ascii	"tS8\000"
+ 2022 00bf 02       		.byte	0x2
+ 2023 00c0 1A       		.byte	0x1a
+ 2024 00c1 C5000000 		.4byte	0xc5
+ 2025 00c5 03       		.uleb128 0x3
+ 2026 00c6 7369676E 		.ascii	"signed char\000"
+ 2026      65642063 
+ 2026      68617200 
+ 2027 00d2 01       		.byte	0x1
+ 2028 00d3 06       		.byte	0x6
+ 2029 00d4 03       		.uleb128 0x3
+ 2030 00d5 73686F72 		.ascii	"short int\000"
+ 2030      7420696E 
+ 2030      7400
+ 2031 00df 02       		.byte	0x2
+ 2032 00e0 05       		.byte	0x5
+ 2033 00e1 03       		.uleb128 0x3
+ 2034 00e2 696E7400 		.ascii	"int\000"
+ 2035 00e6 04       		.byte	0x4
+ 2036 00e7 05       		.byte	0x5
+ 2037 00e8 03       		.uleb128 0x3
+ 2038 00e9 6C6F6E67 		.ascii	"long long int\000"
+ 2038      206C6F6E 
+ 2038      6720696E 
+ 2038      7400
+ 2039 00f7 08       		.byte	0x8
+ 2040 00f8 05       		.byte	0x5
+ 2041 00f9 04       		.uleb128 0x4
+ 2042 00fa 30010000 		.4byte	0x130
+ 2043 00fe 01       		.byte	0x1
+ 2044 00ff 69326343 		.ascii	"i2cCheckStatus\000"
+ 2044      6865636B 
+ 2044      53746174 
+ 2044      757300
+ 2045 010e 01       		.byte	0x1
+ 2046 010f 4C       		.byte	0x4c
+ 2047 0110 01       		.byte	0x1
+ 2048 0111 52000000 		.4byte	0x52
+ 2049 0115 00000000 		.4byte	.LFB2
+ 2050 0119 40000000 		.4byte	.LFE2
+ 2051 011d 00000000 		.4byte	.LLST0
+ 2052 0121 05       		.uleb128 0x5
+ 2053 0122 08000000 		.4byte	.LASF0
+ 2054 0126 01       		.byte	0x1
+ 2055 0127 4D       		.byte	0x4d
+ 2056 0128 52000000 		.4byte	0x52
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 49
+
+
+ 2057 012c 02       		.byte	0x2
+ 2058 012d 91       		.byte	0x91
+ 2059 012e 77       		.sleb128 -9
+ 2060 012f 00       		.byte	0x0
+ 2061 0130 06       		.uleb128 0x6
+ 2062 0131 01       		.byte	0x1
+ 2063 0132 69326349 		.ascii	"i2cInit\000"
+ 2063      6E697400 
+ 2064 013a 01       		.byte	0x1
+ 2065 013b 65       		.byte	0x65
+ 2066 013c 01       		.byte	0x1
+ 2067 013d 40000000 		.4byte	.LFB3
+ 2068 0141 F4000000 		.4byte	.LFE3
+ 2069 0145 37000000 		.4byte	.LLST1
+ 2070 0149 04       		.uleb128 0x4
+ 2071 014a 88010000 		.4byte	0x188
+ 2072 014e 01       		.byte	0x1
+ 2073 014f 69326353 		.ascii	"i2cStart\000"
+ 2073      74617274 
+ 2073      00
+ 2074 0158 01       		.byte	0x1
+ 2075 0159 81       		.byte	0x81
+ 2076 015a 01       		.byte	0x1
+ 2077 015b BA000000 		.4byte	0xba
+ 2078 015f F4000000 		.4byte	.LFB4
+ 2079 0163 78010000 		.4byte	.LFE4
+ 2080 0167 61000000 		.4byte	.LLST2
+ 2081 016b 05       		.uleb128 0x5
+ 2082 016c 08000000 		.4byte	.LASF0
+ 2083 0170 01       		.byte	0x1
+ 2084 0171 82       		.byte	0x82
+ 2085 0172 52000000 		.4byte	0x52
+ 2086 0176 02       		.byte	0x2
+ 2087 0177 91       		.byte	0x91
+ 2088 0178 76       		.sleb128 -10
+ 2089 0179 05       		.uleb128 0x5
+ 2090 017a 00000000 		.4byte	.LASF1
+ 2091 017e 01       		.byte	0x1
+ 2092 017f 83       		.byte	0x83
+ 2093 0180 BA000000 		.4byte	0xba
+ 2094 0184 02       		.byte	0x2
+ 2095 0185 91       		.byte	0x91
+ 2096 0186 77       		.sleb128 -9
+ 2097 0187 00       		.byte	0x0
+ 2098 0188 04       		.uleb128 0x4
+ 2099 0189 CD010000 		.4byte	0x1cd
+ 2100 018d 01       		.byte	0x1
+ 2101 018e 69326352 		.ascii	"i2cRepeatStart\000"
+ 2101      65706561 
+ 2101      74537461 
+ 2101      727400
+ 2102 019d 01       		.byte	0x1
+ 2103 019e B7       		.byte	0xb7
+ 2104 019f 01       		.byte	0x1
+ 2105 01a0 BA000000 		.4byte	0xba
+ 2106 01a4 78010000 		.4byte	.LFB5
+ 2107 01a8 04020000 		.4byte	.LFE5
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 50
+
+
+ 2108 01ac 98000000 		.4byte	.LLST3
+ 2109 01b0 05       		.uleb128 0x5
+ 2110 01b1 08000000 		.4byte	.LASF0
+ 2111 01b5 01       		.byte	0x1
+ 2112 01b6 B8       		.byte	0xb8
+ 2113 01b7 52000000 		.4byte	0x52
+ 2114 01bb 02       		.byte	0x2
+ 2115 01bc 91       		.byte	0x91
+ 2116 01bd 76       		.sleb128 -10
+ 2117 01be 05       		.uleb128 0x5
+ 2118 01bf 00000000 		.4byte	.LASF1
+ 2119 01c3 01       		.byte	0x1
+ 2120 01c4 B9       		.byte	0xb9
+ 2121 01c5 BA000000 		.4byte	0xba
+ 2122 01c9 02       		.byte	0x2
+ 2123 01ca 91       		.byte	0x91
+ 2124 01cb 77       		.sleb128 -9
+ 2125 01cc 00       		.byte	0x0
+ 2126 01cd 07       		.uleb128 0x7
+ 2127 01ce 01       		.byte	0x1
+ 2128 01cf 69326353 		.ascii	"i2cStop\000"
+ 2128      746F7000 
+ 2129 01d7 01       		.byte	0x1
+ 2130 01d8 EE       		.byte	0xee
+ 2131 01d9 01       		.byte	0x1
+ 2132 01da BA000000 		.4byte	0xba
+ 2133 01de 04020000 		.4byte	.LFB6
+ 2134 01e2 4C020000 		.4byte	.LFE6
+ 2135 01e6 CF000000 		.4byte	.LLST4
+ 2136 01ea 08       		.uleb128 0x8
+ 2137 01eb 2F020000 		.4byte	0x22f
+ 2138 01ef 01       		.byte	0x1
+ 2139 01f0 69326350 		.ascii	"i2cPutChar\000"
+ 2139      75744368 
+ 2139      617200
+ 2140 01fb 01       		.byte	0x1
+ 2141 01fc 0B01     		.2byte	0x10b
+ 2142 01fe 01       		.byte	0x1
+ 2143 01ff BA000000 		.4byte	0xba
+ 2144 0203 4C020000 		.4byte	.LFB7
+ 2145 0207 B0020000 		.4byte	.LFE7
+ 2146 020b F9000000 		.4byte	.LLST5
+ 2147 020f 09       		.uleb128 0x9
+ 2148 0210 64617461 		.ascii	"data\000"
+ 2148      00
+ 2149 0215 01       		.byte	0x1
+ 2150 0216 0A01     		.2byte	0x10a
+ 2151 0218 52000000 		.4byte	0x52
+ 2152 021c 02       		.byte	0x2
+ 2153 021d 91       		.byte	0x91
+ 2154 021e 70       		.sleb128 -16
+ 2155 021f 0A       		.uleb128 0xa
+ 2156 0220 00000000 		.4byte	.LASF1
+ 2157 0224 01       		.byte	0x1
+ 2158 0225 0C01     		.2byte	0x10c
+ 2159 0227 BA000000 		.4byte	0xba
+ 2160 022b 02       		.byte	0x2
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 51
+
+
+ 2161 022c 91       		.byte	0x91
+ 2162 022d 77       		.sleb128 -9
+ 2163 022e 00       		.byte	0x0
+ 2164 022f 08       		.uleb128 0x8
+ 2165 0230 85020000 		.4byte	0x285
+ 2166 0234 01       		.byte	0x1
+ 2167 0235 69326347 		.ascii	"i2cGetChar\000"
+ 2167      65744368 
+ 2167      617200
+ 2168 0240 01       		.byte	0x1
+ 2169 0241 3401     		.2byte	0x134
+ 2170 0243 01       		.byte	0x1
+ 2171 0244 BA000000 		.4byte	0xba
+ 2172 0248 B0020000 		.4byte	.LFB8
+ 2173 024c 5C030000 		.4byte	.LFE8
+ 2174 0250 30010000 		.4byte	.LLST6
+ 2175 0254 09       		.uleb128 0x9
+ 2176 0255 6D6F6465 		.ascii	"mode\000"
+ 2176      00
+ 2177 025a 01       		.byte	0x1
+ 2178 025b 3201     		.2byte	0x132
+ 2179 025d 52000000 		.4byte	0x52
+ 2180 0261 02       		.byte	0x2
+ 2181 0262 91       		.byte	0x91
+ 2182 0263 70       		.sleb128 -16
+ 2183 0264 09       		.uleb128 0x9
+ 2184 0265 70446174 		.ascii	"pData\000"
+ 2184      6100
+ 2185 026b 01       		.byte	0x1
+ 2186 026c 3301     		.2byte	0x133
+ 2187 026e 85020000 		.4byte	0x285
+ 2188 0272 02       		.byte	0x2
+ 2189 0273 91       		.byte	0x91
+ 2190 0274 6C       		.sleb128 -20
+ 2191 0275 0A       		.uleb128 0xa
+ 2192 0276 00000000 		.4byte	.LASF1
+ 2193 027a 01       		.byte	0x1
+ 2194 027b 3501     		.2byte	0x135
+ 2195 027d BA000000 		.4byte	0xba
+ 2196 0281 02       		.byte	0x2
+ 2197 0282 91       		.byte	0x91
+ 2198 0283 77       		.sleb128 -9
+ 2199 0284 00       		.byte	0x0
+ 2200 0285 0B       		.uleb128 0xb
+ 2201 0286 04       		.byte	0x4
+ 2202 0287 52000000 		.4byte	0x52
+ 2203 028b 08       		.uleb128 0x8
+ 2204 028c 0A030000 		.4byte	0x30a
+ 2205 0290 01       		.byte	0x1
+ 2206 0291 69326357 		.ascii	"i2cWrite\000"
+ 2206      72697465 
+ 2206      00
+ 2207 029a 01       		.byte	0x1
+ 2208 029b 6E01     		.2byte	0x16e
+ 2209 029d 01       		.byte	0x1
+ 2210 029e BA000000 		.4byte	0xba
+ 2211 02a2 5C030000 		.4byte	.LFB9
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 52
+
+
+ 2212 02a6 02050000 		.4byte	.LFE9
+ 2213 02aa 67010000 		.4byte	.LLST7
+ 2214 02ae 09       		.uleb128 0x9
+ 2215 02af 61646472 		.ascii	"addr\000"
+ 2215      00
+ 2216 02b4 01       		.byte	0x1
+ 2217 02b5 6B01     		.2byte	0x16b
+ 2218 02b7 52000000 		.4byte	0x52
+ 2219 02bb 02       		.byte	0x2
+ 2220 02bc 91       		.byte	0x91
+ 2221 02bd 70       		.sleb128 -16
+ 2222 02be 09       		.uleb128 0x9
+ 2223 02bf 70446174 		.ascii	"pData\000"
+ 2223      6100
+ 2224 02c5 01       		.byte	0x1
+ 2225 02c6 6C01     		.2byte	0x16c
+ 2226 02c8 85020000 		.4byte	0x285
+ 2227 02cc 02       		.byte	0x2
+ 2228 02cd 91       		.byte	0x91
+ 2229 02ce 6C       		.sleb128 -20
+ 2230 02cf 09       		.uleb128 0x9
+ 2231 02d0 6C656E00 		.ascii	"len\000"
+ 2232 02d4 01       		.byte	0x1
+ 2233 02d5 6D01     		.2byte	0x16d
+ 2234 02d7 6E000000 		.4byte	0x6e
+ 2235 02db 02       		.byte	0x2
+ 2236 02dc 91       		.byte	0x91
+ 2237 02dd 68       		.sleb128 -24
+ 2238 02de 0A       		.uleb128 0xa
+ 2239 02df 00000000 		.4byte	.LASF1
+ 2240 02e3 01       		.byte	0x1
+ 2241 02e4 6F01     		.2byte	0x16f
+ 2242 02e6 BA000000 		.4byte	0xba
+ 2243 02ea 02       		.byte	0x2
+ 2244 02eb 91       		.byte	0x91
+ 2245 02ec 75       		.sleb128 -11
+ 2246 02ed 0A       		.uleb128 0xa
+ 2247 02ee 08000000 		.4byte	.LASF0
+ 2248 02f2 01       		.byte	0x1
+ 2249 02f3 7001     		.2byte	0x170
+ 2250 02f5 52000000 		.4byte	0x52
+ 2251 02f9 02       		.byte	0x2
+ 2252 02fa 91       		.byte	0x91
+ 2253 02fb 76       		.sleb128 -10
+ 2254 02fc 0C       		.uleb128 0xc
+ 2255 02fd 6900     		.ascii	"i\000"
+ 2256 02ff 01       		.byte	0x1
+ 2257 0300 7101     		.2byte	0x171
+ 2258 0302 52000000 		.4byte	0x52
+ 2259 0306 02       		.byte	0x2
+ 2260 0307 91       		.byte	0x91
+ 2261 0308 77       		.sleb128 -9
+ 2262 0309 00       		.byte	0x0
+ 2263 030a 08       		.uleb128 0x8
+ 2264 030b 44030000 		.4byte	0x344
+ 2265 030f 01       		.byte	0x1
+ 2266 0310 69326357 		.ascii	"i2cWaitTransmit\000"
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 53
+
+
+ 2266      61697454 
+ 2266      72616E73 
+ 2266      6D697400 
+ 2267 0320 01       		.byte	0x1
+ 2268 0321 CE01     		.2byte	0x1ce
+ 2269 0323 01       		.byte	0x1
+ 2270 0324 BA000000 		.4byte	0xba
+ 2271 0328 04050000 		.4byte	.LFB10
+ 2272 032c 50050000 		.4byte	.LFE10
+ 2273 0330 9E010000 		.4byte	.LLST8
+ 2274 0334 0A       		.uleb128 0xa
+ 2275 0335 08000000 		.4byte	.LASF0
+ 2276 0339 01       		.byte	0x1
+ 2277 033a CF01     		.2byte	0x1cf
+ 2278 033c 52000000 		.4byte	0x52
+ 2279 0340 02       		.byte	0x2
+ 2280 0341 91       		.byte	0x91
+ 2281 0342 77       		.sleb128 -9
+ 2282 0343 00       		.byte	0x0
+ 2283 0344 08       		.uleb128 0x8
+ 2284 0345 8F030000 		.4byte	0x38f
+ 2285 0349 01       		.byte	0x1
+ 2286 034a 69326357 		.ascii	"i2cWriteWithWait\000"
+ 2286      72697465 
+ 2286      57697468 
+ 2286      57616974 
+ 2286      00
+ 2287 035b 01       		.byte	0x1
+ 2288 035c ED01     		.2byte	0x1ed
+ 2289 035e 01       		.byte	0x1
+ 2290 035f BA000000 		.4byte	0xba
+ 2291 0363 50050000 		.4byte	.LFB11
+ 2292 0367 C6050000 		.4byte	.LFE11
+ 2293 036b D5010000 		.4byte	.LLST9
+ 2294 036f 09       		.uleb128 0x9
+ 2295 0370 64617461 		.ascii	"data\000"
+ 2295      00
+ 2296 0375 01       		.byte	0x1
+ 2297 0376 EC01     		.2byte	0x1ec
+ 2298 0378 52000000 		.4byte	0x52
+ 2299 037c 02       		.byte	0x2
+ 2300 037d 91       		.byte	0x91
+ 2301 037e 70       		.sleb128 -16
+ 2302 037f 0A       		.uleb128 0xa
+ 2303 0380 00000000 		.4byte	.LASF1
+ 2304 0384 01       		.byte	0x1
+ 2305 0385 EE01     		.2byte	0x1ee
+ 2306 0387 BA000000 		.4byte	0xba
+ 2307 038b 02       		.byte	0x2
+ 2308 038c 91       		.byte	0x91
+ 2309 038d 77       		.sleb128 -9
+ 2310 038e 00       		.byte	0x0
+ 2311 038f 08       		.uleb128 0x8
+ 2312 0390 01040000 		.4byte	0x401
+ 2313 0394 01       		.byte	0x1
+ 2314 0395 6932634D 		.ascii	"i2cMyWrite\000"
+ 2314      79577269 
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 54
+
+
+ 2314      746500
+ 2315 03a0 01       		.byte	0x1
+ 2316 03a1 0002     		.2byte	0x200
+ 2317 03a3 01       		.byte	0x1
+ 2318 03a4 BA000000 		.4byte	0xba
+ 2319 03a8 C8050000 		.4byte	.LFB12
+ 2320 03ac A6060000 		.4byte	.LFE12
+ 2321 03b0 0C020000 		.4byte	.LLST10
+ 2322 03b4 09       		.uleb128 0x9
+ 2323 03b5 61646472 		.ascii	"addr\000"
+ 2323      00
+ 2324 03ba 01       		.byte	0x1
+ 2325 03bb FD01     		.2byte	0x1fd
+ 2326 03bd 52000000 		.4byte	0x52
+ 2327 03c1 02       		.byte	0x2
+ 2328 03c2 91       		.byte	0x91
+ 2329 03c3 70       		.sleb128 -16
+ 2330 03c4 09       		.uleb128 0x9
+ 2331 03c5 70446174 		.ascii	"pData\000"
+ 2331      6100
+ 2332 03cb 01       		.byte	0x1
+ 2333 03cc FE01     		.2byte	0x1fe
+ 2334 03ce 85020000 		.4byte	0x285
+ 2335 03d2 02       		.byte	0x2
+ 2336 03d3 91       		.byte	0x91
+ 2337 03d4 6C       		.sleb128 -20
+ 2338 03d5 09       		.uleb128 0x9
+ 2339 03d6 6C656E00 		.ascii	"len\000"
+ 2340 03da 01       		.byte	0x1
+ 2341 03db FF01     		.2byte	0x1ff
+ 2342 03dd 6E000000 		.4byte	0x6e
+ 2343 03e1 02       		.byte	0x2
+ 2344 03e2 91       		.byte	0x91
+ 2345 03e3 68       		.sleb128 -24
+ 2346 03e4 0A       		.uleb128 0xa
+ 2347 03e5 00000000 		.4byte	.LASF1
+ 2348 03e9 01       		.byte	0x1
+ 2349 03ea 0102     		.2byte	0x201
+ 2350 03ec BA000000 		.4byte	0xba
+ 2351 03f0 02       		.byte	0x2
+ 2352 03f1 91       		.byte	0x91
+ 2353 03f2 76       		.sleb128 -10
+ 2354 03f3 0C       		.uleb128 0xc
+ 2355 03f4 6900     		.ascii	"i\000"
+ 2356 03f6 01       		.byte	0x1
+ 2357 03f7 0202     		.2byte	0x202
+ 2358 03f9 52000000 		.4byte	0x52
+ 2359 03fd 02       		.byte	0x2
+ 2360 03fe 91       		.byte	0x91
+ 2361 03ff 77       		.sleb128 -9
+ 2362 0400 00       		.byte	0x0
+ 2363 0401 0D       		.uleb128 0xd
+ 2364 0402 01       		.byte	0x1
+ 2365 0403 69326352 		.ascii	"i2cRead\000"
+ 2365      65616400 
+ 2366 040b 01       		.byte	0x1
+ 2367 040c 3802     		.2byte	0x238
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 55
+
+
+ 2368 040e 01       		.byte	0x1
+ 2369 040f BA000000 		.4byte	0xba
+ 2370 0413 A8060000 		.4byte	.LFB13
+ 2371 0417 5C080000 		.4byte	.LFE13
+ 2372 041b 43020000 		.4byte	.LLST11
+ 2373 041f 09       		.uleb128 0x9
+ 2374 0420 61646472 		.ascii	"addr\000"
+ 2374      00
+ 2375 0425 01       		.byte	0x1
+ 2376 0426 3502     		.2byte	0x235
+ 2377 0428 52000000 		.4byte	0x52
+ 2378 042c 02       		.byte	0x2
+ 2379 042d 91       		.byte	0x91
+ 2380 042e 70       		.sleb128 -16
+ 2381 042f 09       		.uleb128 0x9
+ 2382 0430 70427566 		.ascii	"pBuf\000"
+ 2382      00
+ 2383 0435 01       		.byte	0x1
+ 2384 0436 3602     		.2byte	0x236
+ 2385 0438 85020000 		.4byte	0x285
+ 2386 043c 02       		.byte	0x2
+ 2387 043d 91       		.byte	0x91
+ 2388 043e 6C       		.sleb128 -20
+ 2389 043f 09       		.uleb128 0x9
+ 2390 0440 6C656E00 		.ascii	"len\000"
+ 2391 0444 01       		.byte	0x1
+ 2392 0445 3702     		.2byte	0x237
+ 2393 0447 6E000000 		.4byte	0x6e
+ 2394 044b 02       		.byte	0x2
+ 2395 044c 91       		.byte	0x91
+ 2396 044d 68       		.sleb128 -24
+ 2397 044e 0A       		.uleb128 0xa
+ 2398 044f 00000000 		.4byte	.LASF1
+ 2399 0453 01       		.byte	0x1
+ 2400 0454 3902     		.2byte	0x239
+ 2401 0456 BA000000 		.4byte	0xba
+ 2402 045a 02       		.byte	0x2
+ 2403 045b 91       		.byte	0x91
+ 2404 045c 75       		.sleb128 -11
+ 2405 045d 0A       		.uleb128 0xa
+ 2406 045e 08000000 		.4byte	.LASF0
+ 2407 0462 01       		.byte	0x1
+ 2408 0463 3A02     		.2byte	0x23a
+ 2409 0465 52000000 		.4byte	0x52
+ 2410 0469 02       		.byte	0x2
+ 2411 046a 91       		.byte	0x91
+ 2412 046b 76       		.sleb128 -10
+ 2413 046c 0C       		.uleb128 0xc
+ 2414 046d 6900     		.ascii	"i\000"
+ 2415 046f 01       		.byte	0x1
+ 2416 0470 3B02     		.2byte	0x23b
+ 2417 0472 52000000 		.4byte	0x52
+ 2418 0476 02       		.byte	0x2
+ 2419 0477 91       		.byte	0x91
+ 2420 0478 77       		.sleb128 -9
+ 2421 0479 00       		.byte	0x0
+ 2422 047a 00       		.byte	0x0
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 56
+
+
+ 2423              		.section	.debug_abbrev
+ 2424 0000 01       		.uleb128 0x1
+ 2425 0001 11       		.uleb128 0x11
+ 2426 0002 01       		.byte	0x1
+ 2427 0003 10       		.uleb128 0x10
+ 2428 0004 06       		.uleb128 0x6
+ 2429 0005 12       		.uleb128 0x12
+ 2430 0006 01       		.uleb128 0x1
+ 2431 0007 11       		.uleb128 0x11
+ 2432 0008 01       		.uleb128 0x1
+ 2433 0009 25       		.uleb128 0x25
+ 2434 000a 08       		.uleb128 0x8
+ 2435 000b 13       		.uleb128 0x13
+ 2436 000c 0B       		.uleb128 0xb
+ 2437 000d 03       		.uleb128 0x3
+ 2438 000e 08       		.uleb128 0x8
+ 2439 000f 1B       		.uleb128 0x1b
+ 2440 0010 08       		.uleb128 0x8
+ 2441 0011 00       		.byte	0x0
+ 2442 0012 00       		.byte	0x0
+ 2443 0013 02       		.uleb128 0x2
+ 2444 0014 16       		.uleb128 0x16
+ 2445 0015 00       		.byte	0x0
+ 2446 0016 03       		.uleb128 0x3
+ 2447 0017 08       		.uleb128 0x8
+ 2448 0018 3A       		.uleb128 0x3a
+ 2449 0019 0B       		.uleb128 0xb
+ 2450 001a 3B       		.uleb128 0x3b
+ 2451 001b 0B       		.uleb128 0xb
+ 2452 001c 49       		.uleb128 0x49
+ 2453 001d 13       		.uleb128 0x13
+ 2454 001e 00       		.byte	0x0
+ 2455 001f 00       		.byte	0x0
+ 2456 0020 03       		.uleb128 0x3
+ 2457 0021 24       		.uleb128 0x24
+ 2458 0022 00       		.byte	0x0
+ 2459 0023 03       		.uleb128 0x3
+ 2460 0024 08       		.uleb128 0x8
+ 2461 0025 0B       		.uleb128 0xb
+ 2462 0026 0B       		.uleb128 0xb
+ 2463 0027 3E       		.uleb128 0x3e
+ 2464 0028 0B       		.uleb128 0xb
+ 2465 0029 00       		.byte	0x0
+ 2466 002a 00       		.byte	0x0
+ 2467 002b 04       		.uleb128 0x4
+ 2468 002c 2E       		.uleb128 0x2e
+ 2469 002d 01       		.byte	0x1
+ 2470 002e 01       		.uleb128 0x1
+ 2471 002f 13       		.uleb128 0x13
+ 2472 0030 3F       		.uleb128 0x3f
+ 2473 0031 0C       		.uleb128 0xc
+ 2474 0032 03       		.uleb128 0x3
+ 2475 0033 08       		.uleb128 0x8
+ 2476 0034 3A       		.uleb128 0x3a
+ 2477 0035 0B       		.uleb128 0xb
+ 2478 0036 3B       		.uleb128 0x3b
+ 2479 0037 0B       		.uleb128 0xb
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 57
+
+
+ 2480 0038 27       		.uleb128 0x27
+ 2481 0039 0C       		.uleb128 0xc
+ 2482 003a 49       		.uleb128 0x49
+ 2483 003b 13       		.uleb128 0x13
+ 2484 003c 11       		.uleb128 0x11
+ 2485 003d 01       		.uleb128 0x1
+ 2486 003e 12       		.uleb128 0x12
+ 2487 003f 01       		.uleb128 0x1
+ 2488 0040 40       		.uleb128 0x40
+ 2489 0041 06       		.uleb128 0x6
+ 2490 0042 00       		.byte	0x0
+ 2491 0043 00       		.byte	0x0
+ 2492 0044 05       		.uleb128 0x5
+ 2493 0045 34       		.uleb128 0x34
+ 2494 0046 00       		.byte	0x0
+ 2495 0047 03       		.uleb128 0x3
+ 2496 0048 0E       		.uleb128 0xe
+ 2497 0049 3A       		.uleb128 0x3a
+ 2498 004a 0B       		.uleb128 0xb
+ 2499 004b 3B       		.uleb128 0x3b
+ 2500 004c 0B       		.uleb128 0xb
+ 2501 004d 49       		.uleb128 0x49
+ 2502 004e 13       		.uleb128 0x13
+ 2503 004f 02       		.uleb128 0x2
+ 2504 0050 0A       		.uleb128 0xa
+ 2505 0051 00       		.byte	0x0
+ 2506 0052 00       		.byte	0x0
+ 2507 0053 06       		.uleb128 0x6
+ 2508 0054 2E       		.uleb128 0x2e
+ 2509 0055 00       		.byte	0x0
+ 2510 0056 3F       		.uleb128 0x3f
+ 2511 0057 0C       		.uleb128 0xc
+ 2512 0058 03       		.uleb128 0x3
+ 2513 0059 08       		.uleb128 0x8
+ 2514 005a 3A       		.uleb128 0x3a
+ 2515 005b 0B       		.uleb128 0xb
+ 2516 005c 3B       		.uleb128 0x3b
+ 2517 005d 0B       		.uleb128 0xb
+ 2518 005e 27       		.uleb128 0x27
+ 2519 005f 0C       		.uleb128 0xc
+ 2520 0060 11       		.uleb128 0x11
+ 2521 0061 01       		.uleb128 0x1
+ 2522 0062 12       		.uleb128 0x12
+ 2523 0063 01       		.uleb128 0x1
+ 2524 0064 40       		.uleb128 0x40
+ 2525 0065 06       		.uleb128 0x6
+ 2526 0066 00       		.byte	0x0
+ 2527 0067 00       		.byte	0x0
+ 2528 0068 07       		.uleb128 0x7
+ 2529 0069 2E       		.uleb128 0x2e
+ 2530 006a 00       		.byte	0x0
+ 2531 006b 3F       		.uleb128 0x3f
+ 2532 006c 0C       		.uleb128 0xc
+ 2533 006d 03       		.uleb128 0x3
+ 2534 006e 08       		.uleb128 0x8
+ 2535 006f 3A       		.uleb128 0x3a
+ 2536 0070 0B       		.uleb128 0xb
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 58
+
+
+ 2537 0071 3B       		.uleb128 0x3b
+ 2538 0072 0B       		.uleb128 0xb
+ 2539 0073 27       		.uleb128 0x27
+ 2540 0074 0C       		.uleb128 0xc
+ 2541 0075 49       		.uleb128 0x49
+ 2542 0076 13       		.uleb128 0x13
+ 2543 0077 11       		.uleb128 0x11
+ 2544 0078 01       		.uleb128 0x1
+ 2545 0079 12       		.uleb128 0x12
+ 2546 007a 01       		.uleb128 0x1
+ 2547 007b 40       		.uleb128 0x40
+ 2548 007c 06       		.uleb128 0x6
+ 2549 007d 00       		.byte	0x0
+ 2550 007e 00       		.byte	0x0
+ 2551 007f 08       		.uleb128 0x8
+ 2552 0080 2E       		.uleb128 0x2e
+ 2553 0081 01       		.byte	0x1
+ 2554 0082 01       		.uleb128 0x1
+ 2555 0083 13       		.uleb128 0x13
+ 2556 0084 3F       		.uleb128 0x3f
+ 2557 0085 0C       		.uleb128 0xc
+ 2558 0086 03       		.uleb128 0x3
+ 2559 0087 08       		.uleb128 0x8
+ 2560 0088 3A       		.uleb128 0x3a
+ 2561 0089 0B       		.uleb128 0xb
+ 2562 008a 3B       		.uleb128 0x3b
+ 2563 008b 05       		.uleb128 0x5
+ 2564 008c 27       		.uleb128 0x27
+ 2565 008d 0C       		.uleb128 0xc
+ 2566 008e 49       		.uleb128 0x49
+ 2567 008f 13       		.uleb128 0x13
+ 2568 0090 11       		.uleb128 0x11
+ 2569 0091 01       		.uleb128 0x1
+ 2570 0092 12       		.uleb128 0x12
+ 2571 0093 01       		.uleb128 0x1
+ 2572 0094 40       		.uleb128 0x40
+ 2573 0095 06       		.uleb128 0x6
+ 2574 0096 00       		.byte	0x0
+ 2575 0097 00       		.byte	0x0
+ 2576 0098 09       		.uleb128 0x9
+ 2577 0099 05       		.uleb128 0x5
+ 2578 009a 00       		.byte	0x0
+ 2579 009b 03       		.uleb128 0x3
+ 2580 009c 08       		.uleb128 0x8
+ 2581 009d 3A       		.uleb128 0x3a
+ 2582 009e 0B       		.uleb128 0xb
+ 2583 009f 3B       		.uleb128 0x3b
+ 2584 00a0 05       		.uleb128 0x5
+ 2585 00a1 49       		.uleb128 0x49
+ 2586 00a2 13       		.uleb128 0x13
+ 2587 00a3 02       		.uleb128 0x2
+ 2588 00a4 0A       		.uleb128 0xa
+ 2589 00a5 00       		.byte	0x0
+ 2590 00a6 00       		.byte	0x0
+ 2591 00a7 0A       		.uleb128 0xa
+ 2592 00a8 34       		.uleb128 0x34
+ 2593 00a9 00       		.byte	0x0
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 59
+
+
+ 2594 00aa 03       		.uleb128 0x3
+ 2595 00ab 0E       		.uleb128 0xe
+ 2596 00ac 3A       		.uleb128 0x3a
+ 2597 00ad 0B       		.uleb128 0xb
+ 2598 00ae 3B       		.uleb128 0x3b
+ 2599 00af 05       		.uleb128 0x5
+ 2600 00b0 49       		.uleb128 0x49
+ 2601 00b1 13       		.uleb128 0x13
+ 2602 00b2 02       		.uleb128 0x2
+ 2603 00b3 0A       		.uleb128 0xa
+ 2604 00b4 00       		.byte	0x0
+ 2605 00b5 00       		.byte	0x0
+ 2606 00b6 0B       		.uleb128 0xb
+ 2607 00b7 0F       		.uleb128 0xf
+ 2608 00b8 00       		.byte	0x0
+ 2609 00b9 0B       		.uleb128 0xb
+ 2610 00ba 0B       		.uleb128 0xb
+ 2611 00bb 49       		.uleb128 0x49
+ 2612 00bc 13       		.uleb128 0x13
+ 2613 00bd 00       		.byte	0x0
+ 2614 00be 00       		.byte	0x0
+ 2615 00bf 0C       		.uleb128 0xc
+ 2616 00c0 34       		.uleb128 0x34
+ 2617 00c1 00       		.byte	0x0
+ 2618 00c2 03       		.uleb128 0x3
+ 2619 00c3 08       		.uleb128 0x8
+ 2620 00c4 3A       		.uleb128 0x3a
+ 2621 00c5 0B       		.uleb128 0xb
+ 2622 00c6 3B       		.uleb128 0x3b
+ 2623 00c7 05       		.uleb128 0x5
+ 2624 00c8 49       		.uleb128 0x49
+ 2625 00c9 13       		.uleb128 0x13
+ 2626 00ca 02       		.uleb128 0x2
+ 2627 00cb 0A       		.uleb128 0xa
+ 2628 00cc 00       		.byte	0x0
+ 2629 00cd 00       		.byte	0x0
+ 2630 00ce 0D       		.uleb128 0xd
+ 2631 00cf 2E       		.uleb128 0x2e
+ 2632 00d0 01       		.byte	0x1
+ 2633 00d1 3F       		.uleb128 0x3f
+ 2634 00d2 0C       		.uleb128 0xc
+ 2635 00d3 03       		.uleb128 0x3
+ 2636 00d4 08       		.uleb128 0x8
+ 2637 00d5 3A       		.uleb128 0x3a
+ 2638 00d6 0B       		.uleb128 0xb
+ 2639 00d7 3B       		.uleb128 0x3b
+ 2640 00d8 05       		.uleb128 0x5
+ 2641 00d9 27       		.uleb128 0x27
+ 2642 00da 0C       		.uleb128 0xc
+ 2643 00db 49       		.uleb128 0x49
+ 2644 00dc 13       		.uleb128 0x13
+ 2645 00dd 11       		.uleb128 0x11
+ 2646 00de 01       		.uleb128 0x1
+ 2647 00df 12       		.uleb128 0x12
+ 2648 00e0 01       		.uleb128 0x1
+ 2649 00e1 40       		.uleb128 0x40
+ 2650 00e2 06       		.uleb128 0x6
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 60
+
+
+ 2651 00e3 00       		.byte	0x0
+ 2652 00e4 00       		.byte	0x0
+ 2653 00e5 00       		.byte	0x0
+ 2654              		.section	.debug_pubnames,"",%progbits
+ 2655 0000 C8000000 		.4byte	0xc8
+ 2656 0004 0200     		.2byte	0x2
+ 2657 0006 00000000 		.4byte	.Ldebug_info0
+ 2658 000a 7B040000 		.4byte	0x47b
+ 2659 000e F9000000 		.4byte	0xf9
+ 2660 0012 69326343 		.ascii	"i2cCheckStatus\000"
+ 2660      6865636B 
+ 2660      53746174 
+ 2660      757300
+ 2661 0021 30010000 		.4byte	0x130
+ 2662 0025 69326349 		.ascii	"i2cInit\000"
+ 2662      6E697400 
+ 2663 002d 49010000 		.4byte	0x149
+ 2664 0031 69326353 		.ascii	"i2cStart\000"
+ 2664      74617274 
+ 2664      00
+ 2665 003a 88010000 		.4byte	0x188
+ 2666 003e 69326352 		.ascii	"i2cRepeatStart\000"
+ 2666      65706561 
+ 2666      74537461 
+ 2666      727400
+ 2667 004d CD010000 		.4byte	0x1cd
+ 2668 0051 69326353 		.ascii	"i2cStop\000"
+ 2668      746F7000 
+ 2669 0059 EA010000 		.4byte	0x1ea
+ 2670 005d 69326350 		.ascii	"i2cPutChar\000"
+ 2670      75744368 
+ 2670      617200
+ 2671 0068 2F020000 		.4byte	0x22f
+ 2672 006c 69326347 		.ascii	"i2cGetChar\000"
+ 2672      65744368 
+ 2672      617200
+ 2673 0077 8B020000 		.4byte	0x28b
+ 2674 007b 69326357 		.ascii	"i2cWrite\000"
+ 2674      72697465 
+ 2674      00
+ 2675 0084 0A030000 		.4byte	0x30a
+ 2676 0088 69326357 		.ascii	"i2cWaitTransmit\000"
+ 2676      61697454 
+ 2676      72616E73 
+ 2676      6D697400 
+ 2677 0098 44030000 		.4byte	0x344
+ 2678 009c 69326357 		.ascii	"i2cWriteWithWait\000"
+ 2678      72697465 
+ 2678      57697468 
+ 2678      57616974 
+ 2678      00
+ 2679 00ad 8F030000 		.4byte	0x38f
+ 2680 00b1 6932634D 		.ascii	"i2cMyWrite\000"
+ 2680      79577269 
+ 2680      746500
+ 2681 00bc 01040000 		.4byte	0x401
+ 2682 00c0 69326352 		.ascii	"i2cRead\000"
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 61
+
+
+ 2682      65616400 
+ 2683 00c8 00000000 		.4byte	0x0
+ 2684              		.section	.debug_aranges,"",%progbits
+ 2685 0000 1C000000 		.4byte	0x1c
+ 2686 0004 0200     		.2byte	0x2
+ 2687 0006 00000000 		.4byte	.Ldebug_info0
+ 2688 000a 04       		.byte	0x4
+ 2689 000b 00       		.byte	0x0
+ 2690 000c 0000     		.2byte	0x0
+ 2691 000e 0000     		.2byte	0x0
+ 2692 0010 00000000 		.4byte	.Ltext0
+ 2693 0014 5C080000 		.4byte	.Letext0-.Ltext0
+ 2694 0018 00000000 		.4byte	0x0
+ 2695 001c 00000000 		.4byte	0x0
+ 2696              		.section	.debug_str,"",%progbits
+ 2697              	.LASF1:
+ 2698 0000 72657443 		.ascii	"retCode\000"
+ 2698      6F646500 
+ 2699              	.LASF0:
+ 2700 0008 73746174 		.ascii	"status\000"
+ 2700      757300
+ 2701              		.ident	"GCC: (GNU) 4.1.1"
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s 			page 62
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 i2c.c
+/cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s:1      .text:00000000 $t
+/cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s:16     .text:00000000 i2cCheckStatus
+/cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s:60     .text:00000038 $d
+/cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s:69     .text:00000040 i2cInit
+/cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s:66     .text:00000040 $t
+/cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s:162    .text:000000dc $d
+/cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s:175    .text:000000f4 i2cStart
+/cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s:172    .text:000000f4 $t
+/cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s:266    .text:00000170 $d
+/cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s:275    .text:00000178 i2cRepeatStart
+/cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s:272    .text:00000178 $t
+/cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s:370    .text:000001fc $d
+/cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s:379    .text:00000204 i2cStop
+/cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s:376    .text:00000204 $t
+/cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s:425    .text:00000244 $d
+/cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s:434    .text:0000024c i2cPutChar
+/cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s:431    .text:0000024c $t
+/cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s:497    .text:000002a4 $d
+/cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s:507    .text:000002b0 i2cGetChar
+/cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s:504    .text:000002b0 $t
+/cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s:613    .text:00000350 $d
+/cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s:623    .text:0000035c i2cWrite
+/cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s:620    .text:0000035c $t
+/cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s:883    .text:00000504 i2cWaitTransmit
+/cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s:946    .text:00000550 i2cWriteWithWait
+/cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s:1028   .text:000005c8 i2cMyWrite
+/cygdrive/c/Users/embedded/AppData/Local/Temp/ccbCyyA2.s:1166   .text:000006a8 i2cRead
+
+NO UNDEFINED SYMBOLS

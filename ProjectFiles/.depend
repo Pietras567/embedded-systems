@@ -1,0 +1,15 @@
+main.o: main.c general.h startup/lpc2xxx.h startup/printf_P.h \
+  startup/config.h startup/consol.h startup/printf_init.h \
+  startup/consol.h startup/config.h irq/irq_handler.h timer.h VIC.h lcd.h \
+  additional.h i2c.h eeprom.h adc.h add_irq.h Common_Def.h
+lcd.o: lcd.c general.h lcd.h lcd_hw.h startup/lpc2xxx.h ascii.h \
+  additional.h startup/config.h
+lcd_hw.o: lcd_hw.c general.h startup/lpc2xxx.h lcd_hw.h
+additional.o: additional.c additional.h general.h startup/lpc2xxx.h \
+  startup/config.h
+adc.o: adc.c pre_emptive_os/api/osapi.h \
+  pre_emptive_os/api/../../general.h general.h startup/printf_P.h \
+  startup/config.h startup/consol.h startup/lpc2xxx.h startup/config.h \
+  additional.h adc.h
+eeprom.o: eeprom.c general.h i2c.h
+i2c.o: i2c.c general.h i2c.h startup/lpc2xxx.h

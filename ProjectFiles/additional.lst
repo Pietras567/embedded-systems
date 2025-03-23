@@ -1,0 +1,692 @@
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/cc9q1qRi.s 			page 1
+
+
+   1              		.code	16
+   2              		.file	"additional.c"
+   3              		.section	.debug_abbrev,"",%progbits
+   4              	.Ldebug_abbrev0:
+   5              		.section	.debug_info,"",%progbits
+   6              	.Ldebug_info0:
+   7              		.section	.debug_line,"",%progbits
+   8              	.Ldebug_line0:
+   9 0000 5D000000 		.text
+   9      02003000 
+   9      00000201 
+   9      FB0E0D00 
+   9      01010101 
+  10              	.Ltext0:
+  11              		.align	2
+  12              		.global	mdelay
+  13              		.code 16
+  14              		.thumb_func
+  15              		.type	mdelay, %function
+  16              	mdelay:
+  17              	.LFB2:
+  18              		.file 1 "additional.c"
+   1:additional.c  **** /******************************************************************************
+   2:additional.c  ****  *  Funkcje pomocnicze - wykorzystywane do realizacji timer'a, itp.
+   3:additional.c  ****  * 
+   4:additional.c  ****  *  Plik z kodem źródłowym funkcji.
+   5:additional.c  ****  *****************************************************************************/
+   6:additional.c  **** 
+   7:additional.c  **** /******************************************************************************
+   8:additional.c  ****  * Includes
+   9:additional.c  ****  *****************************************************************************/
+  10:additional.c  **** 
+  11:additional.c  **** #include "additional.h"
+  12:additional.c  **** 
+  13:additional.c  **** /******************************************************************************
+  14:additional.c  ****  * Defines and typedefs
+  15:additional.c  ****  *****************************************************************************/
+  16:additional.c  **** 
+  17:additional.c  **** /*****************************************************************************
+  18:additional.c  ****  * Global variables
+  19:additional.c  ****  ****************************************************************************/
+  20:additional.c  **** 
+  21:additional.c  **** /*****************************************************************************
+  22:additional.c  ****  * Local variables
+  23:additional.c  ****  ****************************************************************************/
+  24:additional.c  **** 
+  25:additional.c  **** /*****************************************************************************
+  26:additional.c  ****  * Local prototypes
+  27:additional.c  ****  ****************************************************************************/
+  28:additional.c  **** 
+  29:additional.c  **** /*
+  30:additional.c  ****  * @brief   Funkcja mdelay() służy do odmierzenia wskazanego w milisekundach okresu czasu, po up�
+  31:additional.c  ****  *          którego funkcja się kończy. Przed upłynięciem czasu, wykonywana jest zawartość p
+  32:additional.c  ****  *          za pomocą tej funkcji można wstrzymać wykonywanie programu na pewien zadany czas.
+  33:additional.c  ****  *            
+  34:additional.c  ****  * @param   delayInMs  
+  35:additional.c  ****  *          Długość okresu oczekiwania, podana w milisekundach.
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/cc9q1qRi.s 			page 2
+
+
+  36:additional.c  ****  * @returns void
+  37:additional.c  ****  * 
+  38:additional.c  ****  * @side effects: 
+  39:additional.c  ****  *          Brak
+  40:additional.c  ****  */
+  41:additional.c  **** 
+  42:additional.c  **** void mdelay(tU32 delayInMs)
+  43:additional.c  **** {
+  19              		.loc 1 43 0
+  20 0000 80B5     		push	{r7, lr}
+  21              	.LCFI0:
+  22 0002 81B0     		sub	sp, sp, #4
+  23              	.LCFI1:
+  24 0004 00AF     		add	r7, sp, #0
+  25              	.LCFI2:
+  26 0006 3B1C     		mov	r3, r7
+  27 0008 1860     		str	r0, [r3]
+  44:additional.c  ****   /*
+  45:additional.c  ****    * Setup timer #1 for delay
+  46:additional.c  ****    */
+  47:additional.c  **** 
+  48:additional.c  ****   T0TCR = 0x02;                            // 0x02 = 0b 10 -> Timer counter and Prescle counter are
+  28              		.loc 1 48 0
+  29 000a 124A     		ldr	r2, .L5
+  30 000c 0223     		mov	r3, #2
+  31 000e 1360     		str	r3, [r2]
+  49:additional.c  ****   T0PR  = (PERIPHERAL_CLOCK / 1000) - 1;   // Set prescaler to zero.
+  32              		.loc 1 49 0
+  33 0010 114A     		ldr	r2, .L5+4
+  34 0012 124B     		ldr	r3, .L5+8
+  35 0014 1360     		str	r3, [r2]
+  50:additional.c  **** 
+  51:additional.c  ****   // Since PCLK = CORE_FREQ:
+  52:additional.c  ****   // Basic delay: basic_delay[s] = (1 / CORE_FREQ)[s], then: time_delay [ms] = (delayInMs * (1 / CO
+  53:additional.c  **** 
+  54:additional.c  ****   // Maximum delay value that can be achieved by this function:
+  55:additional.c  ****   // MAX_DELAY = ((2 ^ 63 - 1) / CORE_FREQ) = 9 2223 372 036 854 775 807 / 58 982 400 = 156 374 987
+  56:additional.c  ****   // Max value of delayInMs: (2 ^ 32 - 1) = 4 294 967 295
+  57:additional.c  **** 
+  58:additional.c  ****   T0MR0 = delayInMs;
+  36              		.loc 1 58 0
+  37 0016 124A     		ldr	r2, .L5+12
+  38 0018 3B1C     		mov	r3, r7
+  39 001a 1B68     		ldr	r3, [r3]
+  40 001c 1360     		str	r3, [r2]
+  59:additional.c  **** 
+  60:additional.c  ****   T0IR  = 0xFF;          // Reset all interrrupt flags in interrupt register of Timer 1.
+  41              		.loc 1 60 0
+  42 001e 114A     		ldr	r2, .L5+16
+  43 0020 FF23     		mov	r3, #255
+  44 0022 1360     		str	r3, [r2]
+  61:additional.c  ****   T0MCR = 0x04;          // Stop timer on match, effectively disabling Timer Counter and Prescale C
+  45              		.loc 1 61 0
+  46 0024 104A     		ldr	r2, .L5+20
+  47 0026 0423     		mov	r3, #4
+  48 0028 1360     		str	r3, [r2]
+  62:additional.c  ****   T0TCR = 0x01;          // 0x01 = 0b 1 -> Timer counter and Prescale counter are enabled to count.
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/cc9q1qRi.s 			page 3
+
+
+  49              		.loc 1 62 0
+  50 002a 0A4A     		ldr	r2, .L5
+  51 002c 0123     		mov	r3, #1
+  52 002e 1360     		str	r3, [r2]
+  53              	.L2:
+  63:additional.c  ****   
+  64:additional.c  ****   // Wait until delay time has elapsed (This loop will be terminated when there will be a match bet
+  65:additional.c  **** 
+  66:additional.c  ****   while ((T0TCR & 0x01) == 1)
+  54              		.loc 1 66 0
+  55 0030 084B     		ldr	r3, .L5
+  56 0032 1B68     		ldr	r3, [r3]
+  57 0034 1A1C     		mov	r2, r3
+  58 0036 0123     		mov	r3, #1
+  59 0038 1340     		and	r3, r3, r2
+  60 003a 1B06     		lsl	r3, r3, #24
+  61 003c 1B0E     		lsr	r3, r3, #24
+  62 003e 002B     		cmp	r3, #0
+  63 0040 F6D1     		bne	.L2
+  67:additional.c  ****   {
+  68:additional.c  ****     ;
+  69:additional.c  ****   }
+  70:additional.c  **** 
+  71:additional.c  ****   T0TCR = 0x00;         // Resetting entire TCR register of Timer 1.
+  64              		.loc 1 71 0
+  65 0042 044A     		ldr	r2, .L5
+  66 0044 0023     		mov	r3, #0
+  67 0046 1360     		str	r3, [r2]
+  72:additional.c  **** }
+  68              		.loc 1 72 0
+  69 0048 BD46     		mov	sp, r7
+  70 004a 01B0     		add	sp, sp, #4
+  71              		@ sp needed for prologue
+  72 004c 80BC     		pop	{r7}
+  73 004e 01BC     		pop	{r0}
+  74 0050 0047     		bx	r0
+  75              	.L6:
+  76 0052 0000     		.align	2
+  77              	.L5:
+  78 0054 044000E0 		.word	-536854524
+  79 0058 0C4000E0 		.word	-536854516
+  80 005c 65E60000 		.word	58981
+  81 0060 184000E0 		.word	-536854504
+  82 0064 004000E0 		.word	-536854528
+  83 0068 144000E0 		.word	-536854508
+  84              	.LFE2:
+  85              		.size	mdelay, .-mdelay
+  86              		.align	2
+  87              		.global	sdelay
+  88              		.code 16
+  89              		.thumb_func
+  90              		.type	sdelay, %function
+  91              	sdelay:
+  92              	.LFB3:
+  73:additional.c  **** 
+  74:additional.c  **** /*
+  75:additional.c  ****  * @brief   Funkcja sdelay() służy do odmierzenia wskazanego w sekundach okresu czasu, po upłyni
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/cc9q1qRi.s 			page 4
+
+
+  76:additional.c  ****  *          którego funkcja się kończy. Przed upłynięciem czasu, wykonywana jest zawartość p
+  77:additional.c  ****  *          za pomocą tej funkcji można wstrzymać wykonywanie programu na pewien zadany czas.
+  78:additional.c  ****             
+  79:additional.c  ****  * @param   delayInS 
+  80:additional.c  ****  *          Długość okresu oczekiwania, podana w sekundach.
+  81:additional.c  ****  * @returns void    
+  82:additional.c  ****  * 
+  83:additional.c  ****  * @side effects: 
+  84:additional.c  ****  *          Brak
+  85:additional.c  ****  */
+  86:additional.c  **** 
+  87:additional.c  **** void sdelay(tU32 delayInS)
+  88:additional.c  **** {
+  93              		.loc 1 88 0
+  94 006c 80B5     		push	{r7, lr}
+  95              	.LCFI3:
+  96 006e 81B0     		sub	sp, sp, #4
+  97              	.LCFI4:
+  98 0070 00AF     		add	r7, sp, #0
+  99              	.LCFI5:
+ 100 0072 3B1C     		mov	r3, r7
+ 101 0074 1860     		str	r0, [r3]
+  89:additional.c  ****   /*
+  90:additional.c  ****    * Setup timer #1 for delay
+  91:additional.c  ****    */
+  92:additional.c  **** 
+  93:additional.c  ****   T1TCR = 0x02;          // 0x02 = 0b 10 -> Timer counter and Prescle counter are synchronously res
+ 102              		.loc 1 93 0
+ 103 0076 124A     		ldr	r2, .L11
+ 104 0078 0223     		mov	r3, #2
+ 105 007a 1360     		str	r3, [r2]
+  94:additional.c  ****   T1PR  = PERIPHERAL_CLOCK - 1;          // Set prescaler to zero.
+ 106              		.loc 1 94 0
+ 107 007c 114A     		ldr	r2, .L11+4
+ 108 007e 124B     		ldr	r3, .L11+8
+ 109 0080 1360     		str	r3, [r2]
+  95:additional.c  **** 
+  96:additional.c  ****   // Maximum delay value that can be achieved by this function:
+  97:additional.c  ****   // MAX_DELAY = ((2 ^ 63 - 1) / CORE_FREQ) = 9 2223 372 036 854 775 807 / 58 982 400 = 156 374 987
+  98:additional.c  ****   // Max value of delayInS: (2 ^ 32 - 1) = 4 294 967 295
+  99:additional.c  **** 
+ 100:additional.c  ****   T1MR0 = delayInS;
+ 110              		.loc 1 100 0
+ 111 0082 124A     		ldr	r2, .L11+12
+ 112 0084 3B1C     		mov	r3, r7
+ 113 0086 1B68     		ldr	r3, [r3]
+ 114 0088 1360     		str	r3, [r2]
+ 101:additional.c  **** 
+ 102:additional.c  ****   T1IR  = 0xFF;          // Reset all interrrupt flags in interrupt register of Timer 1.
+ 115              		.loc 1 102 0
+ 116 008a 114A     		ldr	r2, .L11+16
+ 117 008c FF23     		mov	r3, #255
+ 118 008e 1360     		str	r3, [r2]
+ 103:additional.c  ****   T1MCR = 0x04;          // Stop timer on match, effectively disabling Timer Counter and Prescale C
+ 119              		.loc 1 103 0
+ 120 0090 104A     		ldr	r2, .L11+20
+ 121 0092 0423     		mov	r3, #4
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/cc9q1qRi.s 			page 5
+
+
+ 122 0094 1360     		str	r3, [r2]
+ 104:additional.c  ****   T1TCR = 0x01;          // 0x01 = 0b 1 -> Timer counter and Prescale counter are enabled to count.
+ 123              		.loc 1 104 0
+ 124 0096 0A4A     		ldr	r2, .L11
+ 125 0098 0123     		mov	r3, #1
+ 126 009a 1360     		str	r3, [r2]
+ 127              	.L8:
+ 105:additional.c  **** 
+ 106:additional.c  ****   // Wait until delay time has elapsed (This loop will be terminated when there will be a match bet
+ 107:additional.c  **** 
+ 108:additional.c  ****   while ((T1TCR & 0x01) == 1)
+ 128              		.loc 1 108 0
+ 129 009c 084B     		ldr	r3, .L11
+ 130 009e 1B68     		ldr	r3, [r3]
+ 131 00a0 1A1C     		mov	r2, r3
+ 132 00a2 0123     		mov	r3, #1
+ 133 00a4 1340     		and	r3, r3, r2
+ 134 00a6 1B06     		lsl	r3, r3, #24
+ 135 00a8 1B0E     		lsr	r3, r3, #24
+ 136 00aa 002B     		cmp	r3, #0
+ 137 00ac F6D1     		bne	.L8
+ 109:additional.c  ****   {
+ 110:additional.c  ****     ;
+ 111:additional.c  ****   }
+ 112:additional.c  **** 
+ 113:additional.c  ****   T1TCR = 0x00;         // Resetting entire TCR register of Timer 1.
+ 138              		.loc 1 113 0
+ 139 00ae 044A     		ldr	r2, .L11
+ 140 00b0 0023     		mov	r3, #0
+ 141 00b2 1360     		str	r3, [r2]
+ 114:additional.c  **** }
+ 142              		.loc 1 114 0
+ 143 00b4 BD46     		mov	sp, r7
+ 144 00b6 01B0     		add	sp, sp, #4
+ 145              		@ sp needed for prologue
+ 146 00b8 80BC     		pop	{r7}
+ 147 00ba 01BC     		pop	{r0}
+ 148 00bc 0047     		bx	r0
+ 149              	.L12:
+ 150 00be 0000     		.align	2
+ 151              	.L11:
+ 152 00c0 048000E0 		.word	-536838140
+ 153 00c4 0C8000E0 		.word	-536838132
+ 154 00c8 FFFF8303 		.word	58982399
+ 155 00cc 188000E0 		.word	-536838120
+ 156 00d0 008000E0 		.word	-536838144
+ 157 00d4 148000E0 		.word	-536838124
+ 158              	.LFE3:
+ 159              		.size	sdelay, .-sdelay
+ 160              		.section	.debug_frame,"",%progbits
+ 161              	.Lframe0:
+ 162 0000 0C000000 		.4byte	.LECIE0-.LSCIE0
+ 163              	.LSCIE0:
+ 164 0004 FFFFFFFF 		.4byte	0xffffffff
+ 165 0008 01       		.byte	0x1
+ 166 0009 00       		.ascii	"\000"
+ 167 000a 01       		.uleb128 0x1
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/cc9q1qRi.s 			page 6
+
+
+ 168 000b 7C       		.sleb128 -4
+ 169 000c 0E       		.byte	0xe
+ 170 000d 0C       		.byte	0xc
+ 171 000e 0D       		.uleb128 0xd
+ 172 000f 00       		.uleb128 0x0
+ 173              		.align	2
+ 174              	.LECIE0:
+ 175              	.LSFDE0:
+ 176 0010 1C000000 		.4byte	.LEFDE0-.LASFDE0
+ 177              	.LASFDE0:
+ 178 0014 00000000 		.4byte	.Lframe0
+ 179 0018 00000000 		.4byte	.LFB2
+ 180 001c 6C000000 		.4byte	.LFE2-.LFB2
+ 181 0020 42       		.byte	0x4
+ 182              		.4byte	.LCFI0-.LFB2
+ 183 0021 0E       		.byte	0xe
+ 184 0022 08       		.uleb128 0x8
+ 185 0023 87       		.byte	0x87
+ 186 0024 02       		.uleb128 0x2
+ 187 0025 8E       		.byte	0x8e
+ 188 0026 01       		.uleb128 0x1
+ 189 0027 42       		.byte	0x4
+ 190              		.4byte	.LCFI1-.LCFI0
+ 191 0028 0E       		.byte	0xe
+ 192 0029 0C       		.uleb128 0xc
+ 193 002a 42       		.byte	0x4
+ 194              		.4byte	.LCFI2-.LCFI1
+ 195 002b 0D       		.byte	0xd
+ 196 002c 07       		.uleb128 0x7
+ 197 002d 000000   		.align	2
+ 198              	.LEFDE0:
+ 199              	.LSFDE2:
+ 200 0030 1C000000 		.4byte	.LEFDE2-.LASFDE2
+ 201              	.LASFDE2:
+ 202 0034 00000000 		.4byte	.Lframe0
+ 203 0038 6C000000 		.4byte	.LFB3
+ 204 003c 6C000000 		.4byte	.LFE3-.LFB3
+ 205 0040 42       		.byte	0x4
+ 206              		.4byte	.LCFI3-.LFB3
+ 207 0041 0E       		.byte	0xe
+ 208 0042 08       		.uleb128 0x8
+ 209 0043 87       		.byte	0x87
+ 210 0044 02       		.uleb128 0x2
+ 211 0045 8E       		.byte	0x8e
+ 212 0046 01       		.uleb128 0x1
+ 213 0047 42       		.byte	0x4
+ 214              		.4byte	.LCFI4-.LCFI3
+ 215 0048 0E       		.byte	0xe
+ 216 0049 0C       		.uleb128 0xc
+ 217 004a 42       		.byte	0x4
+ 218              		.4byte	.LCFI5-.LCFI4
+ 219 004b 0D       		.byte	0xd
+ 220 004c 07       		.uleb128 0x7
+ 221 004d 000000   		.align	2
+ 222              	.LEFDE2:
+ 223              		.file 2 "general.h"
+ 224              		.text
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/cc9q1qRi.s 			page 7
+
+
+ 225              	.Letext0:
+ 226              		.section	.debug_loc,"",%progbits
+ 227              	.Ldebug_loc0:
+ 228              	.LLST0:
+ 229 0000 00000000 		.4byte	.LFB2-.Ltext0
+ 230 0004 02000000 		.4byte	.LCFI0-.Ltext0
+ 231 0008 0100     		.2byte	0x1
+ 232 000a 5D       		.byte	0x5d
+ 233 000b 02000000 		.4byte	.LCFI0-.Ltext0
+ 234 000f 04000000 		.4byte	.LCFI1-.Ltext0
+ 235 0013 0200     		.2byte	0x2
+ 236 0015 7D       		.byte	0x7d
+ 237 0016 08       		.sleb128 8
+ 238 0017 04000000 		.4byte	.LCFI1-.Ltext0
+ 239 001b 06000000 		.4byte	.LCFI2-.Ltext0
+ 240 001f 0200     		.2byte	0x2
+ 241 0021 7D       		.byte	0x7d
+ 242 0022 0C       		.sleb128 12
+ 243 0023 06000000 		.4byte	.LCFI2-.Ltext0
+ 244 0027 6C000000 		.4byte	.LFE2-.Ltext0
+ 245 002b 0200     		.2byte	0x2
+ 246 002d 77       		.byte	0x77
+ 247 002e 0C       		.sleb128 12
+ 248 002f 00000000 		.4byte	0x0
+ 249 0033 00000000 		.4byte	0x0
+ 250              	.LLST1:
+ 251 0037 6C000000 		.4byte	.LFB3-.Ltext0
+ 252 003b 6E000000 		.4byte	.LCFI3-.Ltext0
+ 253 003f 0100     		.2byte	0x1
+ 254 0041 5D       		.byte	0x5d
+ 255 0042 6E000000 		.4byte	.LCFI3-.Ltext0
+ 256 0046 70000000 		.4byte	.LCFI4-.Ltext0
+ 257 004a 0200     		.2byte	0x2
+ 258 004c 7D       		.byte	0x7d
+ 259 004d 08       		.sleb128 8
+ 260 004e 70000000 		.4byte	.LCFI4-.Ltext0
+ 261 0052 72000000 		.4byte	.LCFI5-.Ltext0
+ 262 0056 0200     		.2byte	0x2
+ 263 0058 7D       		.byte	0x7d
+ 264 0059 0C       		.sleb128 12
+ 265 005a 72000000 		.4byte	.LCFI5-.Ltext0
+ 266 005e D8000000 		.4byte	.LFE3-.Ltext0
+ 267 0062 0200     		.2byte	0x2
+ 268 0064 77       		.byte	0x77
+ 269 0065 0C       		.sleb128 12
+ 270 0066 00000000 		.4byte	0x0
+ 271 006a 00000000 		.4byte	0x0
+ 272              		.section	.debug_info
+ 273 0000 44010000 		.4byte	0x144
+ 274 0004 0200     		.2byte	0x2
+ 275 0006 00000000 		.4byte	.Ldebug_abbrev0
+ 276 000a 04       		.byte	0x4
+ 277 000b 01       		.uleb128 0x1
+ 278 000c 00000000 		.4byte	.Ldebug_line0
+ 279 0010 D8000000 		.4byte	.Letext0
+ 280 0014 00000000 		.4byte	.Ltext0
+ 281 0018 474E5520 		.ascii	"GNU C 4.1.1\000"
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/cc9q1qRi.s 			page 8
+
+
+ 281      4320342E 
+ 281      312E3100 
+ 282 0024 01       		.byte	0x1
+ 283 0025 61646469 		.ascii	"additional.c\000"
+ 283      74696F6E 
+ 283      616C2E63 
+ 283      00
+ 284 0032 2F637967 		.ascii	"/cygdrive/c/Embedded/eclipse/Demo/2138\000"
+ 284      64726976 
+ 284      652F632F 
+ 284      456D6265 
+ 284      64646564 
+ 285 0059 02       		.uleb128 0x2
+ 286 005a 756E7369 		.ascii	"unsigned char\000"
+ 286      676E6564 
+ 286      20636861 
+ 286      7200
+ 287 0068 01       		.byte	0x1
+ 288 0069 08       		.byte	0x8
+ 289 006a 02       		.uleb128 0x2
+ 290 006b 73686F72 		.ascii	"short unsigned int\000"
+ 290      7420756E 
+ 290      7369676E 
+ 290      65642069 
+ 290      6E7400
+ 291 007e 02       		.byte	0x2
+ 292 007f 07       		.byte	0x7
+ 293 0080 03       		.uleb128 0x3
+ 294 0081 74553332 		.ascii	"tU32\000"
+ 294      00
+ 295 0086 02       		.byte	0x2
+ 296 0087 18       		.byte	0x18
+ 297 0088 8C000000 		.4byte	0x8c
+ 298 008c 02       		.uleb128 0x2
+ 299 008d 756E7369 		.ascii	"unsigned int\000"
+ 299      676E6564 
+ 299      20696E74 
+ 299      00
+ 300 009a 04       		.byte	0x4
+ 301 009b 07       		.byte	0x7
+ 302 009c 02       		.uleb128 0x2
+ 303 009d 6C6F6E67 		.ascii	"long long unsigned int\000"
+ 303      206C6F6E 
+ 303      6720756E 
+ 303      7369676E 
+ 303      65642069 
+ 304 00b4 08       		.byte	0x8
+ 305 00b5 07       		.byte	0x7
+ 306 00b6 02       		.uleb128 0x2
+ 307 00b7 7369676E 		.ascii	"signed char\000"
+ 307      65642063 
+ 307      68617200 
+ 308 00c3 01       		.byte	0x1
+ 309 00c4 06       		.byte	0x6
+ 310 00c5 02       		.uleb128 0x2
+ 311 00c6 73686F72 		.ascii	"short int\000"
+ 311      7420696E 
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/cc9q1qRi.s 			page 9
+
+
+ 311      7400
+ 312 00d0 02       		.byte	0x2
+ 313 00d1 05       		.byte	0x5
+ 314 00d2 02       		.uleb128 0x2
+ 315 00d3 696E7400 		.ascii	"int\000"
+ 316 00d7 04       		.byte	0x4
+ 317 00d8 05       		.byte	0x5
+ 318 00d9 02       		.uleb128 0x2
+ 319 00da 6C6F6E67 		.ascii	"long long int\000"
+ 319      206C6F6E 
+ 319      6720696E 
+ 319      7400
+ 320 00e8 08       		.byte	0x8
+ 321 00e9 05       		.byte	0x5
+ 322 00ea 04       		.uleb128 0x4
+ 323 00eb 1B010000 		.4byte	0x11b
+ 324 00ef 01       		.byte	0x1
+ 325 00f0 6D64656C 		.ascii	"mdelay\000"
+ 325      617900
+ 326 00f7 01       		.byte	0x1
+ 327 00f8 2B       		.byte	0x2b
+ 328 00f9 01       		.byte	0x1
+ 329 00fa 00000000 		.4byte	.LFB2
+ 330 00fe 6C000000 		.4byte	.LFE2
+ 331 0102 00000000 		.4byte	.LLST0
+ 332 0106 05       		.uleb128 0x5
+ 333 0107 64656C61 		.ascii	"delayInMs\000"
+ 333      79496E4D 
+ 333      7300
+ 334 0111 01       		.byte	0x1
+ 335 0112 2A       		.byte	0x2a
+ 336 0113 80000000 		.4byte	0x80
+ 337 0117 02       		.byte	0x2
+ 338 0118 91       		.byte	0x91
+ 339 0119 74       		.sleb128 -12
+ 340 011a 00       		.byte	0x0
+ 341 011b 06       		.uleb128 0x6
+ 342 011c 01       		.byte	0x1
+ 343 011d 7364656C 		.ascii	"sdelay\000"
+ 343      617900
+ 344 0124 01       		.byte	0x1
+ 345 0125 58       		.byte	0x58
+ 346 0126 01       		.byte	0x1
+ 347 0127 6C000000 		.4byte	.LFB3
+ 348 012b D8000000 		.4byte	.LFE3
+ 349 012f 37000000 		.4byte	.LLST1
+ 350 0133 05       		.uleb128 0x5
+ 351 0134 64656C61 		.ascii	"delayInS\000"
+ 351      79496E53 
+ 351      00
+ 352 013d 01       		.byte	0x1
+ 353 013e 57       		.byte	0x57
+ 354 013f 80000000 		.4byte	0x80
+ 355 0143 02       		.byte	0x2
+ 356 0144 91       		.byte	0x91
+ 357 0145 74       		.sleb128 -12
+ 358 0146 00       		.byte	0x0
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/cc9q1qRi.s 			page 10
+
+
+ 359 0147 00       		.byte	0x0
+ 360              		.section	.debug_abbrev
+ 361 0000 01       		.uleb128 0x1
+ 362 0001 11       		.uleb128 0x11
+ 363 0002 01       		.byte	0x1
+ 364 0003 10       		.uleb128 0x10
+ 365 0004 06       		.uleb128 0x6
+ 366 0005 12       		.uleb128 0x12
+ 367 0006 01       		.uleb128 0x1
+ 368 0007 11       		.uleb128 0x11
+ 369 0008 01       		.uleb128 0x1
+ 370 0009 25       		.uleb128 0x25
+ 371 000a 08       		.uleb128 0x8
+ 372 000b 13       		.uleb128 0x13
+ 373 000c 0B       		.uleb128 0xb
+ 374 000d 03       		.uleb128 0x3
+ 375 000e 08       		.uleb128 0x8
+ 376 000f 1B       		.uleb128 0x1b
+ 377 0010 08       		.uleb128 0x8
+ 378 0011 00       		.byte	0x0
+ 379 0012 00       		.byte	0x0
+ 380 0013 02       		.uleb128 0x2
+ 381 0014 24       		.uleb128 0x24
+ 382 0015 00       		.byte	0x0
+ 383 0016 03       		.uleb128 0x3
+ 384 0017 08       		.uleb128 0x8
+ 385 0018 0B       		.uleb128 0xb
+ 386 0019 0B       		.uleb128 0xb
+ 387 001a 3E       		.uleb128 0x3e
+ 388 001b 0B       		.uleb128 0xb
+ 389 001c 00       		.byte	0x0
+ 390 001d 00       		.byte	0x0
+ 391 001e 03       		.uleb128 0x3
+ 392 001f 16       		.uleb128 0x16
+ 393 0020 00       		.byte	0x0
+ 394 0021 03       		.uleb128 0x3
+ 395 0022 08       		.uleb128 0x8
+ 396 0023 3A       		.uleb128 0x3a
+ 397 0024 0B       		.uleb128 0xb
+ 398 0025 3B       		.uleb128 0x3b
+ 399 0026 0B       		.uleb128 0xb
+ 400 0027 49       		.uleb128 0x49
+ 401 0028 13       		.uleb128 0x13
+ 402 0029 00       		.byte	0x0
+ 403 002a 00       		.byte	0x0
+ 404 002b 04       		.uleb128 0x4
+ 405 002c 2E       		.uleb128 0x2e
+ 406 002d 01       		.byte	0x1
+ 407 002e 01       		.uleb128 0x1
+ 408 002f 13       		.uleb128 0x13
+ 409 0030 3F       		.uleb128 0x3f
+ 410 0031 0C       		.uleb128 0xc
+ 411 0032 03       		.uleb128 0x3
+ 412 0033 08       		.uleb128 0x8
+ 413 0034 3A       		.uleb128 0x3a
+ 414 0035 0B       		.uleb128 0xb
+ 415 0036 3B       		.uleb128 0x3b
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/cc9q1qRi.s 			page 11
+
+
+ 416 0037 0B       		.uleb128 0xb
+ 417 0038 27       		.uleb128 0x27
+ 418 0039 0C       		.uleb128 0xc
+ 419 003a 11       		.uleb128 0x11
+ 420 003b 01       		.uleb128 0x1
+ 421 003c 12       		.uleb128 0x12
+ 422 003d 01       		.uleb128 0x1
+ 423 003e 40       		.uleb128 0x40
+ 424 003f 06       		.uleb128 0x6
+ 425 0040 00       		.byte	0x0
+ 426 0041 00       		.byte	0x0
+ 427 0042 05       		.uleb128 0x5
+ 428 0043 05       		.uleb128 0x5
+ 429 0044 00       		.byte	0x0
+ 430 0045 03       		.uleb128 0x3
+ 431 0046 08       		.uleb128 0x8
+ 432 0047 3A       		.uleb128 0x3a
+ 433 0048 0B       		.uleb128 0xb
+ 434 0049 3B       		.uleb128 0x3b
+ 435 004a 0B       		.uleb128 0xb
+ 436 004b 49       		.uleb128 0x49
+ 437 004c 13       		.uleb128 0x13
+ 438 004d 02       		.uleb128 0x2
+ 439 004e 0A       		.uleb128 0xa
+ 440 004f 00       		.byte	0x0
+ 441 0050 00       		.byte	0x0
+ 442 0051 06       		.uleb128 0x6
+ 443 0052 2E       		.uleb128 0x2e
+ 444 0053 01       		.byte	0x1
+ 445 0054 3F       		.uleb128 0x3f
+ 446 0055 0C       		.uleb128 0xc
+ 447 0056 03       		.uleb128 0x3
+ 448 0057 08       		.uleb128 0x8
+ 449 0058 3A       		.uleb128 0x3a
+ 450 0059 0B       		.uleb128 0xb
+ 451 005a 3B       		.uleb128 0x3b
+ 452 005b 0B       		.uleb128 0xb
+ 453 005c 27       		.uleb128 0x27
+ 454 005d 0C       		.uleb128 0xc
+ 455 005e 11       		.uleb128 0x11
+ 456 005f 01       		.uleb128 0x1
+ 457 0060 12       		.uleb128 0x12
+ 458 0061 01       		.uleb128 0x1
+ 459 0062 40       		.uleb128 0x40
+ 460 0063 06       		.uleb128 0x6
+ 461 0064 00       		.byte	0x0
+ 462 0065 00       		.byte	0x0
+ 463 0066 00       		.byte	0x0
+ 464              		.section	.debug_pubnames,"",%progbits
+ 465 0000 24000000 		.4byte	0x24
+ 466 0004 0200     		.2byte	0x2
+ 467 0006 00000000 		.4byte	.Ldebug_info0
+ 468 000a 48010000 		.4byte	0x148
+ 469 000e EA000000 		.4byte	0xea
+ 470 0012 6D64656C 		.ascii	"mdelay\000"
+ 470      617900
+ 471 0019 1B010000 		.4byte	0x11b
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/cc9q1qRi.s 			page 12
+
+
+ 472 001d 7364656C 		.ascii	"sdelay\000"
+ 472      617900
+ 473 0024 00000000 		.4byte	0x0
+ 474              		.section	.debug_aranges,"",%progbits
+ 475 0000 1C000000 		.4byte	0x1c
+ 476 0004 0200     		.2byte	0x2
+ 477 0006 00000000 		.4byte	.Ldebug_info0
+ 478 000a 04       		.byte	0x4
+ 479 000b 00       		.byte	0x0
+ 480 000c 0000     		.2byte	0x0
+ 481 000e 0000     		.2byte	0x0
+ 482 0010 00000000 		.4byte	.Ltext0
+ 483 0014 D8000000 		.4byte	.Letext0-.Ltext0
+ 484 0018 00000000 		.4byte	0x0
+ 485 001c 00000000 		.4byte	0x0
+ 486              		.ident	"GCC: (GNU) 4.1.1"
+ARM GAS  /cygdrive/c/Users/embedded/AppData/Local/Temp/cc9q1qRi.s 			page 13
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 additional.c
+/cygdrive/c/Users/embedded/AppData/Local/Temp/cc9q1qRi.s:1      .text:00000000 $t
+/cygdrive/c/Users/embedded/AppData/Local/Temp/cc9q1qRi.s:16     .text:00000000 mdelay
+/cygdrive/c/Users/embedded/AppData/Local/Temp/cc9q1qRi.s:78     .text:00000054 $d
+/cygdrive/c/Users/embedded/AppData/Local/Temp/cc9q1qRi.s:91     .text:0000006c sdelay
+/cygdrive/c/Users/embedded/AppData/Local/Temp/cc9q1qRi.s:88     .text:0000006c $t
+/cygdrive/c/Users/embedded/AppData/Local/Temp/cc9q1qRi.s:152    .text:000000c0 $d
+
+NO UNDEFINED SYMBOLS
